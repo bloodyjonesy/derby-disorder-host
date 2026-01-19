@@ -21,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showRaceIntro = false;
   bool _raceIntroComplete = false;
   bool _showSettings = false;
+  bool _partyFeaturesInitialized = false; // Track if party features initialized this round
   GameState? _lastGameState;
 
   @override
@@ -140,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Drinking card reveal overlay
+    // Drinking card reveal overlay - show during PADDOCK phase
     if (partyProvider.showDrinkingCard && partyProvider.currentCard != null) {
       overlays.add(
         Positioned.fill(
@@ -152,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Hot seat announcement overlay
+    // Hot seat announcement overlay - show during PADDOCK phase (before betting)
     if (partyProvider.showHotSeatAnnouncement && partyProvider.hotSeat.currentPlayerId != null) {
       final hotSeatPlayer = roomProvider.players.where(
         (p) => p.id == partyProvider.hotSeat.currentPlayerId,
@@ -175,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // Rivalry result overlay
+    // Rivalry result overlay - show during RESULTS phase
     if (partyProvider.showRivalryResult && partyProvider.currentRivalry != null) {
       final rivalry = partyProvider.currentRivalry!;
       final player1 = roomProvider.players.where((p) => p.id == rivalry.player1Id).firstOrNull;
@@ -212,24 +213,37 @@ class _HomeScreenState extends State<HomeScreen> {
     SettingsProvider settingsProvider,
     PartyProvider partyProvider,
   ) {
+    // Detect when we transition to PADDOCK phase (start of new round)
+    // This is when we should initialize party features BEFORE betting
+    if (roomProvider.gameState == GameState.paddock && _lastGameState != GameState.paddock) {
+      _partyFeaturesInitialized = false; // Reset for new round
+      
+      // Start party features for new race (BEFORE betting)
+      if (settingsProvider.isPartyMode && !_partyFeaturesInitialized) {
+        final playerIds = roomProvider.players.map((p) => p.id).toList();
+        partyProvider.startNewRace(playerIds, settingsProvider.settings);
+        _partyFeaturesInitialized = true;
+      }
+    }
+
     // Detect when we transition to racing phase
     if (roomProvider.gameState == GameState.racing && _lastGameState != GameState.racing) {
       _showRaceIntro = true;
       _raceIntroComplete = false;
       // Pause race updates during intro
       raceProvider.pause();
-      
-      // Start party features for new race
-      if (settingsProvider.isPartyMode) {
-        final playerIds = roomProvider.players.map((p) => p.id).toList();
-        partyProvider.startNewRace(playerIds, settingsProvider.settings);
-      }
     }
-    // Reset intro state when leaving racing phase
-    if (roomProvider.gameState != GameState.racing) {
+    
+    // Reset intro state and party features flag when going back to lobby or results
+    if (roomProvider.gameState == GameState.lobby || roomProvider.gameState == GameState.results) {
       _showRaceIntro = false;
       _raceIntroComplete = false;
+      // Reset party features flag so next round can initialize
+      if (roomProvider.gameState == GameState.results) {
+        _partyFeaturesInitialized = false;
+      }
     }
+    
     _lastGameState = roomProvider.gameState;
 
     if (!roomProvider.hasRoom || roomProvider.gameState == GameState.lobby) {
@@ -292,8 +306,12 @@ class _HomeScreenState extends State<HomeScreen> {
               RoomCodeDisplay(roomCode: roomProvider.roomCode),
               const Spacer(),
               
-              // Party features indicators
-              if (settingsProvider.isPartyMode) ...[
+              // Party features indicators (show during paddock/wager/sabotage phases)
+              if (settingsProvider.isPartyMode && 
+                  (roomProvider.gameState == GameState.paddock ||
+                   roomProvider.gameState == GameState.wager ||
+                   roomProvider.gameState == GameState.sabotage ||
+                   roomProvider.gameState == GameState.racing)) ...[
                 // Current drinking card (if any)
                 if (settingsProvider.drinkingCardsEnabled && partyProvider.currentCard != null)
                   Padding(
@@ -319,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 
-                // Rivalry indicator
+                // Rivalry indicator - show prominently during betting
                 if (settingsProvider.rivalriesEnabled && partyProvider.currentRivalry != null)
                   Padding(
                     padding: const EdgeInsets.only(right: 12),
@@ -359,13 +377,55 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPaddockView(RoomProvider roomProvider, SettingsProvider settingsProvider, PartyProvider partyProvider) {
     final isSabotage = roomProvider.gameState == GameState.sabotage;
+    final isPaddock = roomProvider.gameState == GameState.paddock;
     
     return Padding(
       padding: const EdgeInsets.only(top: 120),
       child: Row(
         children: [
-          // Left side - Player bets panel (only during sabotage)
-          if (isSabotage)
+          // Left side - Featured Battle panel (during paddock/wager) or Target Info (sabotage)
+          if (settingsProvider.isPartyMode && settingsProvider.rivalriesEnabled && 
+              partyProvider.currentRivalry != null && (isPaddock || roomProvider.gameState == GameState.wager))
+            Container(
+              width: 320,
+              margin: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Rivalry display
+                  Builder(
+                    builder: (context) {
+                      final rivalry = partyProvider.currentRivalry!;
+                      final p1 = roomProvider.players.where((p) => p.id == rivalry.player1Id).firstOrNull;
+                      final p2 = roomProvider.players.where((p) => p.id == rivalry.player2Id).firstOrNull;
+                      if (p1 == null || p2 == null) return const SizedBox.shrink();
+                      return RivalryDisplay(
+                        rivalry: rivalry,
+                        player1: p1,
+                        player2: p2,
+                        showResult: false,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Hot seat reminder if applicable
+                  if (settingsProvider.hotSeatEnabled && partyProvider.hotSeat.currentPlayerId != null)
+                    Builder(
+                      builder: (context) {
+                        final hotSeatPlayer = roomProvider.players.where(
+                          (p) => p.id == partyProvider.hotSeat.currentPlayerId,
+                        ).firstOrNull;
+                        if (hotSeatPlayer == null) return const SizedBox.shrink();
+                        return HotSeatIndicator(
+                          playerName: hotSeatPlayer.name,
+                          isCompact: false,
+                        );
+                      },
+                    ),
+                ],
+              ),
+            )
+          else if (isSabotage)
             Container(
               width: 320,
               margin: const EdgeInsets.all(16),
@@ -399,6 +459,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         final isHotSeat = settingsProvider.hotSeatEnabled && 
                             partyProvider.isInHotSeat(player.id);
                         
+                        // Check if in rivalry
+                        final isInRivalry = settingsProvider.rivalriesEnabled &&
+                            partyProvider.currentRivalry != null &&
+                            partyProvider.currentRivalry!.involves(player.id);
+                        
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(12),
@@ -408,8 +473,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             border: Border.all(
                               color: isHotSeat 
                                   ? AppTheme.neonOrange.withOpacity(0.5)
-                                  : AppTheme.neonCyan.withOpacity(0.3),
-                              width: isHotSeat ? 2 : 1,
+                                  : isInRivalry
+                                      ? AppTheme.neonYellow.withOpacity(0.5)
+                                      : AppTheme.neonCyan.withOpacity(0.3),
+                              width: (isHotSeat || isInRivalry) ? 2 : 1,
                             ),
                           ),
                           child: Column(
@@ -426,11 +493,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                             padding: EdgeInsets.only(right: 4),
                                             child: Text('🔥', style: TextStyle(fontSize: 14)),
                                           ),
+                                        if (isInRivalry)
+                                          const Padding(
+                                            padding: EdgeInsets.only(right: 4),
+                                            child: Text('⚔️', style: TextStyle(fontSize: 14)),
+                                          ),
                                         Expanded(
                                           child: Text(
                                             player.name,
                                             style: TextStyle(
-                                              color: isHotSeat ? AppTheme.neonOrange : Colors.white,
+                                              color: isHotSeat ? AppTheme.neonOrange : 
+                                                     isInRivalry ? AppTheme.neonYellow : Colors.white,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),
@@ -597,8 +670,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           
-          // Right side spacer to balance layout during sabotage
-          if (isSabotage) const SizedBox(width: 320),
+          // Right side spacer to balance layout
+          if (isSabotage || (settingsProvider.isPartyMode && settingsProvider.rivalriesEnabled && 
+              partyProvider.currentRivalry != null && (isPaddock || roomProvider.gameState == GameState.wager))) 
+            const SizedBox(width: 320),
         ],
       ),
     );
