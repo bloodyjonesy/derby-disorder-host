@@ -11,3 +11,8 @@ export 'skip_phase_button.dart';
 export 'race_results_overlay.dart';
 export 'tv_focusable.dart';
 export 'update_dialog.dart';
+export 'commentary_overlay.dart';
+export 'player_reactions.dart';
+export 'personality_indicators.dart';
+export 'participant_card.dart';
+export 'race_intro.dart';

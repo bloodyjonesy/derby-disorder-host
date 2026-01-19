@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../animations/animations.dart';
+import '../widgets/personality_indicators.dart';
 import 'race_track_painter.dart';
 
 /// Race view widget that displays the animated race track with effects
@@ -163,9 +164,20 @@ class _RaceViewState extends State<RaceView>
     }
   }
 
+  // Track when we last showed a close battle to avoid spam
+  double _lastCloseBattleTime = 0;
+  static const double _closeBattleCooldown = 3.0; // Only show every 3 seconds
+
   void _detectCloseBattles(Offset center, double trackRadius) {
-    // Only check occasionally to avoid spam
-    if (_animationController.value.remainder(0.1) > 0.05) return;
+    // Cooldown check - don't spam close battle effects
+    if (_animationController.value < _lastCloseBattleTime + _closeBattleCooldown / 10) {
+      return;
+    }
+
+    // Find the single closest pair of racers (not all pairs)
+    String? closestP1;
+    String? closestP2;
+    double closestDistance = double.infinity;
 
     for (var i = 0; i < widget.participants.length; i++) {
       final p1 = widget.participants[i];
@@ -178,21 +190,29 @@ class _RaceViewState extends State<RaceView>
         if (p2Pos >= 100) continue; // Skip finished
 
         final distance = (p1Pos - p2Pos).abs();
-        if (distance < 3 && distance > 0) {
-          final midPos = Offset(
-            (_getParticipantScreenPosition(p1.id, center, trackRadius).dx +
-                _getParticipantScreenPosition(p2.id, center, trackRadius).dx) / 2,
-            (_getParticipantScreenPosition(p1.id, center, trackRadius).dy +
-                _getParticipantScreenPosition(p2.id, center, trackRadius).dy) / 2,
-          );
-          _animationManager.triggerAnimation(
-            RaceAnimationType.closeBattle,
-            midPos,
-            participantIds: [p1.id, p2.id],
-            duration: 0.5,
-          );
+        if (distance < closestDistance && distance < 2 && distance > 0) {
+          closestDistance = distance;
+          closestP1 = p1.id;
+          closestP2 = p2.id;
         }
       }
+    }
+
+    // Only trigger for the single closest battle
+    if (closestP1 != null && closestP2 != null) {
+      _lastCloseBattleTime = _animationController.value;
+      final midPos = Offset(
+        (_getParticipantScreenPosition(closestP1, center, trackRadius).dx +
+            _getParticipantScreenPosition(closestP2, center, trackRadius).dx) / 2,
+        (_getParticipantScreenPosition(closestP1, center, trackRadius).dy +
+            _getParticipantScreenPosition(closestP2, center, trackRadius).dy) / 2,
+      );
+      _animationManager.triggerAnimation(
+        RaceAnimationType.closeBattle,
+        midPos,
+        participantIds: [closestP1, closestP2],
+        duration: 0.3, // Shorter duration
+      );
     }
   }
 
@@ -254,6 +274,9 @@ class _RaceViewState extends State<RaceView>
       builder: (context, constraints) {
         // Update known size for event detection
         _lastKnownSize = Size(constraints.maxWidth, constraints.maxHeight);
+        
+        final center = Offset(constraints.maxWidth / 2, constraints.maxHeight / 2);
+        final trackRadius = math.min(constraints.maxWidth, constraints.maxHeight) * 0.35;
 
         return AnimatedBuilder(
           animation: _animationController,
@@ -277,6 +300,14 @@ class _RaceViewState extends State<RaceView>
                     animationValue: _animationController.value,
                   ),
                   size: Size.infinite,
+                ),
+                // Personality indicators overlay
+                PersonalityIndicators(
+                  participants: widget.participants,
+                  positions: widget.positions,
+                  trackSize: _lastKnownSize,
+                  trackCenter: center,
+                  trackRadius: trackRadius,
                 ),
               ],
             );

@@ -246,30 +246,36 @@ class RaceEffectsPainter extends CustomPainter {
     final progress = animation.progress(animationValue * animation.duration);
     final position = animation.position;
 
-    // Lightning bolts
-    final boltPaint = Paint()
-      ..color = Colors.yellow.withOpacity(0.7 + math.sin(progress * math.pi * 8) * 0.3)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+    // Subtle pulse ring instead of lightning - much less intrusive
+    final pulseRadius = 20 + progress * 25;
+    final opacity = (1 - progress) * 0.35; // Much lower opacity
 
-    // Draw zigzag bolt
-    final path = Path();
-    path.moveTo(position.dx - 20, position.dy - 30);
-    path.lineTo(position.dx - 5, position.dy - 10);
-    path.lineTo(position.dx - 15, position.dy - 10);
-    path.lineTo(position.dx + 5, position.dy + 15);
-    path.lineTo(position.dx - 5, position.dy);
-    path.lineTo(position.dx + 10, position.dy);
-    path.lineTo(position.dx + 20, position.dy + 30);
+    final ringPaint = Paint()
+      ..color = Colors.orange.withOpacity(opacity)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
 
-    canvas.drawPath(path, boltPaint);
+    canvas.drawCircle(position, pulseRadius, ringPaint);
 
-    // Glow
-    final glowPaint = Paint()
-      ..color = Colors.yellow.withOpacity(0.3 + math.sin(progress * math.pi * 8) * 0.2)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    canvas.drawPath(path, glowPaint);
+    // Small "VS" text indicator that fades out
+    if (progress < 0.5) {
+      final textOpacity = (0.5 - progress) * 0.8;
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: '⚡',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.orange.withOpacity(textOpacity),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(position.dx - textPainter.width / 2, position.dy - 35),
+      );
+    }
   }
 
   void _paintFinish(Canvas canvas, ActiveAnimation animation, Size size) {
