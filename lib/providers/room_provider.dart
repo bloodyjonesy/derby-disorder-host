@@ -77,10 +77,10 @@ class RoomProvider extends ChangeNotifier {
     }
   }
 
-  /// Start the game
-  void startGame() {
+  /// Start the game with settings
+  void startGame({Map<String, dynamic>? settings}) {
     if (_roomCode != null) {
-      _socketService.startGame(_roomCode!);
+      _socketService.startGame(_roomCode!, settings: settings);
     }
   }
 

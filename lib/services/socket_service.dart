@@ -153,11 +153,13 @@ class SocketService extends ChangeNotifier {
     });
   }
 
-  /// Start the game
-  void startGame(String roomCode) {
-    _socket?.emit('START_GAME', {
-      'roomCode': roomCode,
-    });
+  /// Start the game with optional settings
+  void startGame(String roomCode, {Map<String, dynamic>? settings}) {
+    final data = <String, dynamic>{'roomCode': roomCode};
+    if (settings != null) {
+      data['settings'] = settings;
+    }
+    _socket?.emit('START_GAME', data);
   }
 
   /// Skip the current phase

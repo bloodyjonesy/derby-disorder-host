@@ -18,6 +18,8 @@ class Room {
   final List<Item> items;
   final int chaosMeter; // 0-100
   final int? timer; // seconds remaining in current phase
+  final int raceNumber; // Current race number
+  final Map<String, dynamic>? settings; // Game settings
   // Party mode fields from server
   final String? hotSeatPlayerId; // Player in the hot seat
   final String? favoriteParticipantId; // The race favorite
@@ -33,6 +35,8 @@ class Room {
     required this.items,
     required this.chaosMeter,
     this.timer,
+    this.raceNumber = 0,
+    this.settings,
     this.hotSeatPlayerId,
     this.favoriteParticipantId,
   });
@@ -80,6 +84,8 @@ class Room {
           [],
       chaosMeter: json['chaosMeter'] as int? ?? 0,
       timer: json['timer'] as int?,
+      raceNumber: json['raceNumber'] as int? ?? 0,
+      settings: json['settings'] as Map<String, dynamic>?,
       hotSeatPlayerId: json['hotSeatPlayerId'] as String?,
       favoriteParticipantId: json['favoriteParticipantId'] as String?,
     );
@@ -97,6 +103,8 @@ class Room {
       'items': items.map((e) => e.toJson()).toList(),
       'chaosMeter': chaosMeter,
       'timer': timer,
+      'raceNumber': raceNumber,
+      'settings': settings,
       'hotSeatPlayerId': hotSeatPlayerId,
       'favoriteParticipantId': favoriteParticipantId,
     };
@@ -113,6 +121,8 @@ class Room {
     List<Item>? items,
     int? chaosMeter,
     int? timer,
+    int? raceNumber,
+    Map<String, dynamic>? settings,
     String? hotSeatPlayerId,
     String? favoriteParticipantId,
   }) {
@@ -127,6 +137,8 @@ class Room {
       items: items ?? this.items,
       chaosMeter: chaosMeter ?? this.chaosMeter,
       timer: timer ?? this.timer,
+      raceNumber: raceNumber ?? this.raceNumber,
+      settings: settings ?? this.settings,
       hotSeatPlayerId: hotSeatPlayerId ?? this.hotSeatPlayerId,
       favoriteParticipantId: favoriteParticipantId ?? this.favoriteParticipantId,
     );

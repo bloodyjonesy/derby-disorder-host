@@ -10,7 +10,7 @@ class LobbyScreen extends StatelessWidget {
   final String? roomCode;
   final List<Player> players;
   final VoidCallback onCreateRoom;
-  final VoidCallback onStartGame;
+  final void Function(GameSettings settings) onStartGame;
   final VoidCallback? onOpenSettings;
   final GameSettings? settings;
   final bool isLoading;
@@ -36,8 +36,8 @@ class LobbyScreen extends StatelessWidget {
               event.logicalKey == LogicalKeyboardKey.select) {
             if (roomCode == null) {
               onCreateRoom();
-            } else if (players.isNotEmpty) {
-              onStartGame();
+            } else if (players.isNotEmpty && settings != null) {
+              onStartGame(settings!);
             }
             return KeyEventResult.handled;
           }
@@ -130,7 +130,7 @@ class LobbyScreen extends StatelessWidget {
                       )
                     else
                       ElevatedButton.icon(
-                        onPressed: onStartGame,
+                        onPressed: settings != null ? () => onStartGame(settings!) : null,
                         icon: const Text('🏁', style: TextStyle(fontSize: 24)),
                         label: const Text('START GAME'),
                         style: ElevatedButton.styleFrom(

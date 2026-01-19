@@ -270,7 +270,12 @@ class _HomeScreenState extends State<HomeScreen> {
         roomCode: roomProvider.roomCode,
         players: roomProvider.players,
         onCreateRoom: roomProvider.createRoom,
-        onStartGame: roomProvider.startGame,
+        onStartGame: (settings) => roomProvider.startGame(
+          settings: {
+            'maxRaces': settings.maxRaces,
+            'startingBalance': settings.startingBalance,
+          },
+        ),
         onOpenSettings: _openSettings,
         settings: settingsProvider.settings,
         isLoading: roomProvider.isLoading,
@@ -808,8 +813,19 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    // Check if game is finished (reached max races)
+    final room = roomProvider.room;
+    final currentRace = room?.raceNumber ?? 0;
+    final maxRaces = room?.settings?['maxRaces'] as int? ?? 0;
+    final isGameOver = maxRaces > 0 && currentRace >= maxRaces;
+
     // Check for broke players who need the wheel
     final brokePlayers = roomProvider.players.where((p) => p.balance <= 0).toList();
+
+    // Show final leaderboard if game is over
+    if (isGameOver) {
+      return _buildFinalLeaderboard(roomProvider);
+    }
 
     return Stack(
       children: [
@@ -877,6 +893,177 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
         
       ],
+    );
+  }
+
+  Widget _buildFinalLeaderboard(RoomProvider roomProvider) {
+    // Sort players by balance (highest first)
+    final sortedPlayers = [...roomProvider.players];
+    sortedPlayers.sort((a, b) => b.balance.compareTo(a.balance));
+
+    return Container(
+      color: Colors.black.withOpacity(0.9),
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Trophy header
+              const Text(
+                '🏆',
+                style: TextStyle(fontSize: 80),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'GAME OVER!',
+                style: AppTheme.neonText(
+                  color: AppTheme.neonYellow,
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Final Standings',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // Leaderboard
+              Container(
+                constraints: const BoxConstraints(maxWidth: 500),
+                decoration: AppTheme.neonBox(
+                  color: AppTheme.neonCyan,
+                  borderRadius: 16,
+                ),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: sortedPlayers.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final player = entry.value;
+                    final isWinner = index == 0;
+                    
+                    Color rankColor;
+                    String medal;
+                    switch (index) {
+                      case 0:
+                        rankColor = AppTheme.neonYellow;
+                        medal = '🥇';
+                        break;
+                      case 1:
+                        rankColor = Colors.grey[300]!;
+                        medal = '🥈';
+                        break;
+                      case 2:
+                        rankColor = Colors.orange;
+                        medal = '🥉';
+                        break;
+                      default:
+                        rankColor = Colors.grey;
+                        medal = '#${index + 1}';
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isWinner 
+                            ? AppTheme.neonYellow.withOpacity(0.2)
+                            : Colors.black.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: isWinner 
+                            ? Border.all(color: AppTheme.neonYellow, width: 2)
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          // Medal/Rank
+                          SizedBox(
+                            width: 40,
+                            child: Text(
+                              medal,
+                              style: TextStyle(
+                                fontSize: index < 3 ? 24 : 16,
+                                color: rankColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Name
+                          Expanded(
+                            child: Text(
+                              player.name,
+                              style: TextStyle(
+                                color: isWinner ? AppTheme.neonYellow : Colors.white,
+                                fontSize: isWinner ? 20 : 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          // Final balance
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: player.balance > 0 
+                                  ? AppTheme.neonGreen.withOpacity(0.2)
+                                  : Colors.red.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '\$${player.balance}',
+                              style: TextStyle(
+                                color: player.balance > 0 ? AppTheme.neonGreen : Colors.red,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // Winner announcement
+              if (sortedPlayers.isNotEmpty)
+                Column(
+                  children: [
+                    Text(
+                      '👑 CHAMPION 👑',
+                      style: AppTheme.neonText(
+                        color: AppTheme.neonYellow,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      sortedPlayers.first.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'with \$${sortedPlayers.first.balance}',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
