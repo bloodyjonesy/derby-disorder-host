@@ -738,6 +738,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: RaceLeaderboard(
                   participants: roomProvider.participants,
                   positions: raceProvider.positions,
+                  finishOrder: raceProvider.finishOrder,
                   expandToFill: true,
                 ),
               ),

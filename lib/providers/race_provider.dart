@@ -10,6 +10,7 @@ class RaceProvider extends ChangeNotifier {
   RaceSnapshot? _currentSnapshot;
   RaceResult? _raceResult;
   final Map<String, double> _animatedPositions = {};
+  final List<String> _finishOrder = []; // Track order participants crossed finish line
   bool _isRacing = false;
   bool _isPaused = false; // Pause updates during intro
 
@@ -26,6 +27,7 @@ class RaceProvider extends ChangeNotifier {
   RaceSnapshot? get currentSnapshot => _currentSnapshot;
   RaceResult? get raceResult => _raceResult;
   Map<String, double> get positions => _isPaused ? {} : _animatedPositions;
+  List<String> get finishOrder => List.unmodifiable(_finishOrder);
   bool get isRacing => _isRacing;
   bool get isPaused => _isPaused;
   String? get leaderId => _isPaused ? null : _currentSnapshot?.leader;
@@ -48,8 +50,16 @@ class RaceProvider extends ChangeNotifier {
   void _updateAnimatedPositions(RaceSnapshot snapshot) {
     // Lerp towards target positions for smooth animation
     for (final entry in snapshot.positions.entries) {
-      final current = _animatedPositions[entry.key] ?? 0.0;
+      final participantId = entry.key;
       final target = entry.value;
+      
+      // If participant has already finished, lock their position at 100
+      if (_finishOrder.contains(participantId)) {
+        _animatedPositions[participantId] = 100.0;
+        continue;
+      }
+      
+      final current = _animatedPositions[participantId] ?? 0.0;
       
       // Use faster interpolation near the finish line so racers blast through
       // Also snap to target if very close (prevents slow crawl)
@@ -57,18 +67,19 @@ class RaceProvider extends ChangeNotifier {
       
       if (target >= 95 || difference < 1) {
         // Near finish or very close - use faster lerp or snap
-        _animatedPositions[entry.key] = current + (target - current) * 0.4;
+        _animatedPositions[participantId] = current + (target - current) * 0.4;
       } else if (target >= 80) {
         // Approaching finish - speed up
-        _animatedPositions[entry.key] = current + (target - current) * 0.25;
+        _animatedPositions[participantId] = current + (target - current) * 0.25;
       } else {
         // Normal smooth interpolation
-        _animatedPositions[entry.key] = current + (target - current) * 0.15;
+        _animatedPositions[participantId] = current + (target - current) * 0.15;
       }
       
-      // Snap to 100 if target is 100 and we're close
-      if (target >= 100 && _animatedPositions[entry.key]! >= 98) {
-        _animatedPositions[entry.key] = 100.0;
+      // Check if participant just crossed the finish line
+      if (target >= 100 && !_finishOrder.contains(participantId)) {
+        _finishOrder.add(participantId);
+        _animatedPositions[participantId] = 100.0;
       }
     }
   }
@@ -90,6 +101,7 @@ class RaceProvider extends ChangeNotifier {
     _currentSnapshot = null;
     _raceResult = null;
     _animatedPositions.clear();
+    _finishOrder.clear();
     _isRacing = false;
     _isPaused = false;
     notifyListeners();
@@ -113,6 +125,7 @@ class RaceProvider extends ChangeNotifier {
   void startFresh(List<String> participantIds) {
     _isPaused = false;
     _animatedPositions.clear();
+    _finishOrder.clear();
     for (final id in participantIds) {
       _animatedPositions[id] = 0.0;
     }
