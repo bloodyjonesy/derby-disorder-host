@@ -2,8 +2,13 @@
 class AppConstants {
   AppConstants._();
 
-  /// Default socket server URL
-  static const String defaultSocketUrl = 'http://localhost:3001';
+  /// Server URL - change this to your Railway URL for production
+  /// For local development: 'http://localhost:3001'
+  /// For production: 'https://your-app.railway.app' or your custom domain
+  static const String defaultSocketUrl = String.fromEnvironment(
+    'SERVER_URL',
+    defaultValue: 'http://localhost:3001',
+  );
 
   /// Application name
   static const String appName = 'Derby Disorder: The Chaos Cup';
