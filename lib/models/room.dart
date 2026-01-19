@@ -18,6 +18,9 @@ class Room {
   final List<Item> items;
   final int chaosMeter; // 0-100
   final int? timer; // seconds remaining in current phase
+  // Party mode fields from server
+  final String? hotSeatPlayerId; // Player in the hot seat
+  final String? favoriteParticipantId; // The race favorite
 
   const Room({
     required this.roomCode,
@@ -30,6 +33,8 @@ class Room {
     required this.items,
     required this.chaosMeter,
     this.timer,
+    this.hotSeatPlayerId,
+    this.favoriteParticipantId,
   });
 
   factory Room.fromJson(Map<String, dynamic> json) {
@@ -75,6 +80,8 @@ class Room {
           [],
       chaosMeter: json['chaosMeter'] as int? ?? 0,
       timer: json['timer'] as int?,
+      hotSeatPlayerId: json['hotSeatPlayerId'] as String?,
+      favoriteParticipantId: json['favoriteParticipantId'] as String?,
     );
   }
 
@@ -90,6 +97,8 @@ class Room {
       'items': items.map((e) => e.toJson()).toList(),
       'chaosMeter': chaosMeter,
       'timer': timer,
+      'hotSeatPlayerId': hotSeatPlayerId,
+      'favoriteParticipantId': favoriteParticipantId,
     };
   }
 
@@ -104,6 +113,8 @@ class Room {
     List<Item>? items,
     int? chaosMeter,
     int? timer,
+    String? hotSeatPlayerId,
+    String? favoriteParticipantId,
   }) {
     return Room(
       roomCode: roomCode ?? this.roomCode,
@@ -116,6 +127,8 @@ class Room {
       items: items ?? this.items,
       chaosMeter: chaosMeter ?? this.chaosMeter,
       timer: timer ?? this.timer,
+      hotSeatPlayerId: hotSeatPlayerId ?? this.hotSeatPlayerId,
+      favoriteParticipantId: favoriteParticipantId ?? this.favoriteParticipantId,
     );
   }
 

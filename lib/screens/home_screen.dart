@@ -53,6 +53,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final settingsProvider = context.watch<SettingsProvider>();
     final partyProvider = context.watch<PartyProvider>();
 
+    // Sync hot seat with server (if available)
+    if (roomProvider.room?.hotSeatPlayerId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          partyProvider.syncHotSeat(roomProvider.room?.hotSeatPlayerId);
+        }
+      });
+    }
+
     // Show settings screen
     if (_showSettings) {
       return Scaffold(
@@ -219,10 +228,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _partyFeaturesInitialized = false; // Reset for new round
       
       // Start party features for new race (BEFORE betting)
+      // Schedule after build to avoid calling notifyListeners during build
       if (settingsProvider.isPartyMode && !_partyFeaturesInitialized) {
-        final playerIds = roomProvider.players.map((p) => p.id).toList();
-        partyProvider.startNewRace(playerIds, settingsProvider.settings);
         _partyFeaturesInitialized = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            final playerIds = roomProvider.players.map((p) => p.id).toList();
+            partyProvider.startNewRace(playerIds, settingsProvider.settings);
+          }
+        });
       }
     }
 

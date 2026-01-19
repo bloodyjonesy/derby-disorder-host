@@ -57,6 +57,15 @@ class PartyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Sync hot seat with server's value
+  void syncHotSeat(String? serverHotSeatPlayerId) {
+    if (serverHotSeatPlayerId != null && 
+        _state.hotSeat.currentPlayerId != serverHotSeatPlayerId) {
+      _state.hotSeat.currentPlayerId = serverHotSeatPlayerId;
+      notifyListeners();
+    }
+  }
+
   /// Dismiss drinking card overlay
   void dismissDrinkingCard() {
     _showDrinkingCard = false;
