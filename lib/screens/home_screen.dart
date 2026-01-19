@@ -244,8 +244,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (roomProvider.gameState == GameState.racing && _lastGameState != GameState.racing) {
       _showRaceIntro = true;
       _raceIntroComplete = false;
-      // Pause race updates during intro
-      raceProvider.pause();
+      // Pause race updates during intro - schedule after build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          raceProvider.pause();
+        }
+      });
     }
     
     // Reset intro state and party features flag when going back to lobby or results
