@@ -11,6 +11,7 @@ class RaceProvider extends ChangeNotifier {
   RaceResult? _raceResult;
   final Map<String, double> _animatedPositions = {};
   bool _isRacing = false;
+  bool _isPaused = false; // Pause updates during intro
 
   // Subscriptions
   StreamSubscription<RaceSnapshot>? _snapshotSubscription;
@@ -24,9 +25,10 @@ class RaceProvider extends ChangeNotifier {
   // Getters
   RaceSnapshot? get currentSnapshot => _currentSnapshot;
   RaceResult? get raceResult => _raceResult;
-  Map<String, double> get positions => _animatedPositions;
+  Map<String, double> get positions => _isPaused ? {} : _animatedPositions;
   bool get isRacing => _isRacing;
-  String? get leaderId => _currentSnapshot?.leader;
+  bool get isPaused => _isPaused;
+  String? get leaderId => _isPaused ? null : _currentSnapshot?.leader;
 
   void _setupListeners() {
     _snapshotSubscription = _socketService.onRaceSnapshot.listen((snapshot) {
@@ -71,6 +73,31 @@ class RaceProvider extends ChangeNotifier {
     _raceResult = null;
     _animatedPositions.clear();
     _isRacing = false;
+    _isPaused = false;
+    notifyListeners();
+  }
+
+  /// Pause race updates (during intro)
+  void pause() {
+    _isPaused = true;
+    _animatedPositions.clear(); // Clear positions so race starts fresh
+    notifyListeners();
+  }
+
+  /// Resume race updates (after intro)
+  void resume() {
+    _isPaused = false;
+    // Positions will update on next snapshot
+    notifyListeners();
+  }
+
+  /// Start fresh - reset positions to 0 for all participants
+  void startFresh(List<String> participantIds) {
+    _isPaused = false;
+    _animatedPositions.clear();
+    for (final id in participantIds) {
+      _animatedPositions[id] = 0.0;
+    }
     notifyListeners();
   }
 

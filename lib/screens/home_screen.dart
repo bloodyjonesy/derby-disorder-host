@@ -93,6 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (roomProvider.gameState == GameState.racing && _lastGameState != GameState.racing) {
       _showRaceIntro = true;
       _raceIntroComplete = false;
+      // Pause race updates during intro
+      raceProvider.pause();
     }
     // Reset intro state when leaving racing phase
     if (roomProvider.gameState != GameState.racing) {
@@ -122,6 +124,9 @@ class _HomeScreenState extends State<HomeScreen> {
           return RaceIntro(
             participants: roomProvider.participants,
             onComplete: () {
+              // Start race fresh when intro completes
+              final participantIds = roomProvider.participants.map((p) => p.id).toList();
+              raceProvider.startFresh(participantIds);
               setState(() {
                 _raceIntroComplete = true;
               });

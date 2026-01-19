@@ -55,35 +55,34 @@ class _RaceIntroState extends State<RaceIntro>
     }
 
     // Brief delay before starting
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 300));
     
-    // Show only first 4 participants quickly (or all if less than 4)
-    final showCount = widget.participants.length.clamp(1, 4);
-    for (var i = 0; i < showCount; i++) {
+    // Show ALL participants
+    for (var i = 0; i < widget.participants.length; i++) {
       if (!mounted) return;
       setState(() => _currentParticipantIndex = i);
-      await Future.delayed(const Duration(milliseconds: 250));
+      await Future.delayed(const Duration(milliseconds: 400));
     }
     
-    // Very short pause
-    await Future.delayed(const Duration(milliseconds: 200));
+    // Pause after showcase
+    await Future.delayed(const Duration(milliseconds: 600));
     
     if (!mounted) return;
     setState(() => _introComplete = true);
     
-    // Faster countdown sequence
+    // Full countdown sequence
     for (var i = 3; i >= 1; i--) {
       if (!mounted) return;
       setState(() => _currentCountdown = i);
       _countdownController.forward(from: 0);
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 800));
     }
     
     // GO!
     if (!mounted) return;
     setState(() => _showGo = true);
     _countdownController.forward(from: 0);
-    await Future.delayed(const Duration(milliseconds: 400));
+    await Future.delayed(const Duration(milliseconds: 600));
     
     // Complete
     widget.onComplete?.call();
@@ -233,11 +232,11 @@ class _RaceIntroState extends State<RaceIntro>
           
           const SizedBox(height: 40),
           
-          // Progress indicator (only show for first 4)
+          // Progress indicator (show all participants)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: widget.participants.take(4).toList().asMap().entries.map((entry) {
-              final safeCurrentIndex = _currentParticipantIndex.clamp(0, 3);
+            children: widget.participants.asMap().entries.map((entry) {
+              final safeCurrentIndex = _currentParticipantIndex.clamp(0, widget.participants.length - 1);
               final isActive = entry.key == safeCurrentIndex;
               final isPast = entry.key < safeCurrentIndex;
               final color = _parseColor(entry.value.color);
