@@ -18,13 +18,13 @@ class PhaseIndicator extends StatelessWidget {
       case GameState.lobby:
         return 'LOBBY';
       case GameState.paddock:
-        return 'THE PADDOCK';
+        return 'PADDOCK';
       case GameState.wager:
-        return 'PLACE YOUR BETS';
+        return 'BETTING';
       case GameState.sabotage:
         return 'SABOTAGE';
       case GameState.racing:
-        return 'THE RACE';
+        return 'RACING';
       case GameState.results:
         return 'RESULTS';
     }
@@ -52,7 +52,8 @@ class PhaseIndicator extends StatelessWidget {
     final color = _getPhaseColor();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      constraints: const BoxConstraints(maxWidth: 140), // Prevent overflow
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: AppTheme.neonBox(
         color: color,
         borderRadius: 8,
@@ -61,29 +62,21 @@ class PhaseIndicator extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'PHASE',
-            style: AppTheme.neonText(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
             _getPhaseName(),
             style: AppTheme.neonText(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
           if (timer != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               '${timer}s',
               style: AppTheme.neonText(
                 color: AppTheme.neonYellow,
-                fontSize: 16,
+                fontSize: 14,
               ),
             ),
           ],

@@ -106,6 +106,14 @@ class RoomProvider extends ChangeNotifier {
     return _room?.getBet(playerId);
   }
 
+  /// Get the favorite participant for this race
+  Participant? get favorite => _room?.getFavorite();
+
+  /// Check if a participant is the favorite
+  bool isFavorite(String participantId) {
+    return _room?.isFavorite(participantId) ?? false;
+  }
+
   @override
   void dispose() {
     _roomSubscription?.cancel();

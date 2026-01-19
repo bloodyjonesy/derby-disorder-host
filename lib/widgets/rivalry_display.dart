@@ -20,7 +20,8 @@ class RivalryDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
+      constraints: const BoxConstraints(maxWidth: 300),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -38,247 +39,85 @@ class RivalryDisplay extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Title
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('⚔️', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 8),
+              const Text('⚔️', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
               Text(
                 'FEATURED BATTLE',
-                style: AppTheme.neonText(
-                  color: AppTheme.neonYellow,
-                  fontSize: 18,
-                ),
+                style: AppTheme.neonText(color: AppTheme.neonYellow, fontSize: 14),
               ),
-              const SizedBox(width: 8),
-              const Text('⚔️', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 6),
+              const Text('⚔️', style: TextStyle(fontSize: 18)),
             ],
           ),
-          const SizedBox(height: 16),
-          
-          // Players
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildPlayerSide(
-                player: player1,
-                isWinner: showResult && rivalry.winnerId == player1.id,
-                isLoser: showResult && rivalry.loserId == player1.id,
-                profit: rivalry.player1Profit,
-                color: AppTheme.neonPink,
-              ),
-              
-              // VS
+              Expanded(child: _buildPlayerSide(player1, rivalry.winnerId == player1.id, rivalry.loserId == player1.id, rivalry.player1Profit, AppTheme.neonPink)),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    Text(
-                      'VS',
-                      style: AppTheme.neonText(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (showResult) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'LOSER DRINKS!',
-                        style: TextStyle(
-                          color: AppTheme.neonPink,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text('VS', style: AppTheme.neonText(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
               ),
-              
-              _buildPlayerSide(
-                player: player2,
-                isWinner: showResult && rivalry.winnerId == player2.id,
-                isLoser: showResult && rivalry.loserId == player2.id,
-                profit: rivalry.player2Profit,
-                color: AppTheme.neonCyan,
-              ),
+              Expanded(child: _buildPlayerSide(player2, rivalry.winnerId == player2.id, rivalry.loserId == player2.id, rivalry.player2Profit, AppTheme.neonCyan)),
             ],
           ),
-          
-          // Stakes
           if (!showResult) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                '🍺 Whoever profits less this race DRINKS! 🍺',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
-            ),
+            const SizedBox(height: 10),
+            Text('🍺 Loser drinks! 🍺', style: TextStyle(color: Colors.white70, fontSize: 10)),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildPlayerSide({
-    required Player player,
-    required bool isWinner,
-    required bool isLoser,
-    required int profit,
-    required Color color,
-  }) {
+  Widget _buildPlayerSide(Player player, bool isWinner, bool isLoser, int profit, Color color) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Winner/Loser badge
-        if (isWinner)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppTheme.neonGreen.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              '👑 WINNER',
-              style: TextStyle(
-                color: AppTheme.neonGreen,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          )
-        else if (isLoser)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              '🍺 DRINKS!',
-              style: TextStyle(
-                color: Colors.red,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          )
-        else
-          const SizedBox(height: 24),
-        
-        const SizedBox(height: 8),
-        
-        // Player avatar/icon
         Container(
-          width: 80,
-          height: 80,
+          width: 50, height: 50,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: color.withOpacity(0.2),
-            border: Border.all(
-              color: isWinner ? AppTheme.neonGreen : (isLoser ? Colors.red : color),
-              width: 3,
-            ),
-            boxShadow: isWinner
-                ? [
-                    BoxShadow(
-                      color: AppTheme.neonGreen.withOpacity(0.5),
-                      blurRadius: 15,
-                      spreadRadius: 3,
-                    ),
-                  ]
-                : null,
+            border: Border.all(color: isWinner ? AppTheme.neonGreen : (isLoser ? Colors.red : color), width: 2),
           ),
-          child: Center(
-            child: Text(
-              player.name.isNotEmpty ? player.name[0].toUpperCase() : '?',
-              style: TextStyle(
-                color: color,
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+          child: Center(child: Text(player.name.isNotEmpty ? player.name[0].toUpperCase() : '?', style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold))),
         ),
-        
-        const SizedBox(height: 8),
-        
-        // Player name
-        Text(
-          player.name,
-          style: TextStyle(
-            color: color,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        
-        // Profit (if showing results)
-        if (profit != 0) ...[
-          const SizedBox(height: 4),
-          Text(
-            '${profit >= 0 ? '+' : ''}\$${profit}',
-            style: TextStyle(
-              color: profit >= 0 ? AppTheme.neonGreen : Colors.red,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+        const SizedBox(height: 4),
+        Text(player.name, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+        if (showResult && (isWinner || isLoser))
+          Text(isWinner ? '👑' : '🍺', style: const TextStyle(fontSize: 16)),
       ],
     );
   }
 }
 
-/// Compact rivalry banner for display during phases
 class RivalryBanner extends StatelessWidget {
   final String player1Name;
   final String player2Name;
 
-  const RivalryBanner({
-    super.key,
-    required this.player1Name,
-    required this.player2Name,
-  });
+  const RivalryBanner({super.key, required this.player1Name, required this.player2Name});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      constraints: const BoxConstraints(maxWidth: 180),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.neonPink.withOpacity(0.3),
-            AppTheme.neonYellow.withOpacity(0.3),
-            AppTheme.neonCyan.withOpacity(0.3),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(colors: [AppTheme.neonPink.withOpacity(0.3), AppTheme.neonCyan.withOpacity(0.3)]),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.neonYellow.withOpacity(0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('⚔️', style: TextStyle(fontSize: 16)),
-          const SizedBox(width: 8),
-          Text(
-            '$player1Name vs $player2Name',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text('⚔️', style: TextStyle(fontSize: 16)),
+          const Text('⚔️', style: TextStyle(fontSize: 12)),
+          const SizedBox(width: 4),
+          Flexible(child: Text('$player1Name vs $player2Name', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11), overflow: TextOverflow.ellipsis)),
         ],
       ),
     );

@@ -5,6 +5,7 @@ export 'game_state.dart';
 export 'player.dart';
 export 'participant.dart';
 export 'bet.dart';
+export 'race_event.dart';
 export 'race_snapshot.dart';
 export 'race_result.dart';
 export 'item.dart';

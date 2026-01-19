@@ -137,4 +137,28 @@ class Room {
     if (bet == null) return null;
     return getParticipant(bet.participantId)?.name;
   }
+
+  /// Get the favorite participant (highest combined zoomies + chonk)
+  Participant? getFavorite() {
+    if (participants.isEmpty) return null;
+    
+    Participant? favorite;
+    int highestScore = -1;
+    
+    for (final p in participants) {
+      // Score based on speed (zoomies) and stamina (chonk), with slight boost for low derp (consistency)
+      final score = p.zoomies * 2 + p.chonk + (10 - p.derp);
+      if (score > highestScore) {
+        highestScore = score;
+        favorite = p;
+      }
+    }
+    
+    return favorite;
+  }
+
+  /// Check if a participant is the favorite
+  bool isFavorite(String participantId) {
+    return getFavorite()?.id == participantId;
+  }
 }

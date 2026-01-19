@@ -263,6 +263,7 @@ class _DrinkingCardRevealState extends State<DrinkingCardReveal>
       case DrinkingCardType.duringRace:
         return AppTheme.neonCyan;
       case DrinkingCardType.raceEnd:
+      default:
         return AppTheme.neonPink;
     }
   }
@@ -274,6 +275,7 @@ class _DrinkingCardRevealState extends State<DrinkingCardReveal>
       case DrinkingCardType.duringRace:
         return '🏃 RACE RULE';
       case DrinkingCardType.raceEnd:
+      default:
         return '🏁 RESULTS RULE';
     }
   }
@@ -339,6 +341,7 @@ class ActiveRuleCard extends StatelessWidget {
       case DrinkingCardType.duringRace:
         return AppTheme.neonCyan;
       case DrinkingCardType.raceEnd:
+      default:
         return AppTheme.neonPink;
     }
   }

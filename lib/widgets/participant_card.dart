@@ -10,6 +10,7 @@ class ParticipantCard extends StatefulWidget {
   final int totalBetAmount; // Total amount bet on this
   final bool isCrowdFavorite; // Has the most bets
   final bool isUnderdog; // Has the least bets
+  final bool isFavorite; // Is the race favorite (best stats)
   final int animationDelay; // Stagger animation
 
   const ParticipantCard({
@@ -19,6 +20,7 @@ class ParticipantCard extends StatefulWidget {
     this.totalBetAmount = 0,
     this.isCrowdFavorite = false,
     this.isUnderdog = false,
+    this.isFavorite = false,
     this.animationDelay = 0,
   });
 
@@ -175,43 +177,82 @@ class _ParticipantCardState extends State<ParticipantCard>
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            _participantColor.withOpacity(0.4),
-            _participantColor.withOpacity(0.2),
-          ],
+          colors: widget.isFavorite 
+            ? [AppTheme.neonGreen.withOpacity(0.5), AppTheme.neonGreen.withOpacity(0.2)]
+            : [_participantColor.withOpacity(0.4), _participantColor.withOpacity(0.2)],
         ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(14),
           topRight: Radius.circular(14),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Column(
         children: [
-          // Type badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              widget.participant.type.name.toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
+          // FAVORITE badge - prominent display
+          if (widget.isFavorite)
+            Container(
+              margin: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.neonGreen.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.neonGreen, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.neonGreen.withOpacity(0.5),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('⭐', style: TextStyle(fontSize: 12)),
+                  SizedBox(width: 4),
+                  Text(
+                    'FAVORITE',
+                    style: TextStyle(
+                      color: AppTheme.neonGreen,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Text('⭐', style: TextStyle(fontSize: 12)),
+                ],
               ),
             ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Type badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  widget.participant.type.name.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (widget.isCrowdFavorite && !widget.isFavorite) ...[
+                const SizedBox(width: 6),
+                const Text('🔥', style: TextStyle(fontSize: 14)),
+              ],
+              if (widget.isUnderdog) ...[
+                const SizedBox(width: 6),
+                const Text('🐴', style: TextStyle(fontSize: 14)),
+              ],
+            ],
           ),
-          if (widget.isCrowdFavorite) ...[
-            const SizedBox(width: 6),
-            const Text('🔥', style: TextStyle(fontSize: 14)),
-          ],
-          if (widget.isUnderdog) ...[
-            const SizedBox(width: 6),
-            const Text('🐴', style: TextStyle(fontSize: 14)),
-          ],
         ],
       ),
     );

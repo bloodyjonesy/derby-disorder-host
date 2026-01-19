@@ -654,6 +654,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       
                       final isCrowdFavorite = betsOnThis.length == maxBets && maxBets > 0;
                       final isUnderdog = betsOnThis.isEmpty;
+                      final isFavorite = roomProvider.isFavorite(participant.id);
                       
                       return ParticipantCard(
                         participant: participant,
@@ -661,6 +662,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         totalBetAmount: totalBetAmount,
                         isCrowdFavorite: isCrowdFavorite,
                         isUnderdog: isUnderdog,
+                        isFavorite: isFavorite,
                         animationDelay: index,
                       );
                     }).toList(),
