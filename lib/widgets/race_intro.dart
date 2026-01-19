@@ -48,35 +48,42 @@ class _RaceIntroState extends State<RaceIntro>
   }
 
   void _startSequence() async {
+    // Safety check
+    if (widget.participants.isEmpty) {
+      widget.onComplete?.call();
+      return;
+    }
+
     // Brief delay before starting
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 200));
     
-    // Show each participant quickly
-    for (var i = 0; i < widget.participants.length; i++) {
+    // Show only first 4 participants quickly (or all if less than 4)
+    final showCount = widget.participants.length.clamp(1, 4);
+    for (var i = 0; i < showCount; i++) {
       if (!mounted) return;
       setState(() => _currentParticipantIndex = i);
-      await Future.delayed(const Duration(milliseconds: 350));
+      await Future.delayed(const Duration(milliseconds: 250));
     }
     
-    // Short pause after participant showcase
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Very short pause
+    await Future.delayed(const Duration(milliseconds: 200));
     
     if (!mounted) return;
     setState(() => _introComplete = true);
     
-    // Countdown sequence
+    // Faster countdown sequence
     for (var i = 3; i >= 1; i--) {
       if (!mounted) return;
       setState(() => _currentCountdown = i);
       _countdownController.forward(from: 0);
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(const Duration(milliseconds: 500));
     }
     
     // GO!
     if (!mounted) return;
     setState(() => _showGo = true);
     _countdownController.forward(from: 0);
-    await Future.delayed(const Duration(milliseconds: 600));
+    await Future.delayed(const Duration(milliseconds: 400));
     
     // Complete
     widget.onComplete?.call();
@@ -116,6 +123,19 @@ class _RaceIntroState extends State<RaceIntro>
   }
 
   Widget _buildParticipantShowcase() {
+    // Safety check for empty participants
+    if (widget.participants.isEmpty) {
+      return const Center(
+        child: Text(
+          'Loading racers...',
+          style: TextStyle(color: Colors.white, fontSize: 24),
+        ),
+      );
+    }
+
+    // Ensure index is within bounds
+    final safeIndex = _currentParticipantIndex.clamp(0, widget.participants.length - 1);
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -132,12 +152,12 @@ class _RaceIntroState extends State<RaceIntro>
           
           // Current participant with animation
           TweenAnimationBuilder<double>(
-            key: ValueKey(_currentParticipantIndex),
+            key: ValueKey(safeIndex),
             tween: Tween(begin: 0.0, end: 1.0),
             duration: const Duration(milliseconds: 300),
             curve: Curves.elasticOut,
             builder: (context, value, child) {
-              final participant = widget.participants[_currentParticipantIndex];
+              final participant = widget.participants[safeIndex];
               final color = _parseColor(participant.color);
               
               return Transform.scale(
@@ -213,12 +233,13 @@ class _RaceIntroState extends State<RaceIntro>
           
           const SizedBox(height: 40),
           
-          // Progress indicator
+          // Progress indicator (only show for first 4)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: widget.participants.asMap().entries.map((entry) {
-              final isActive = entry.key == _currentParticipantIndex;
-              final isPast = entry.key < _currentParticipantIndex;
+            children: widget.participants.take(4).toList().asMap().entries.map((entry) {
+              final safeCurrentIndex = _currentParticipantIndex.clamp(0, 3);
+              final isActive = entry.key == safeCurrentIndex;
+              final isPast = entry.key < safeCurrentIndex;
               final color = _parseColor(entry.value.color);
               
               return Container(

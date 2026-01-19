@@ -308,9 +308,15 @@ class _CommentaryOverlayState extends State<CommentaryOverlay>
   void didUpdateWidget(CommentaryOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
     
+    // Update generator if participants changed
+    if (widget.participants != oldWidget.participants) {
+      _generator = CommentaryGenerator(participants: widget.participants);
+    }
+    
     // Reset when race restarts
     if (widget.isRacing && !_wasRacing) {
-      _generator.reset();
+      // Recreate generator with current participants to ensure correct data
+      _generator = CommentaryGenerator(participants: widget.participants);
       _activeMessages.clear();
       // Generate race start message
       final startMessages = _generator.generateCommentary(
