@@ -5,6 +5,7 @@ import '../models/models.dart';
 import '../providers/providers.dart';
 import '../services/socket_service.dart';
 import '../widgets/widgets.dart';
+import '../widgets/cheer_animation.dart';
 import '../graphics/graphics.dart';
 import '../utils/theme.dart';
 import 'settings_screen.dart';
@@ -774,6 +775,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
+        // Cheer emoji animations
+        CheerAnimation(
+          cheerStream: context.read<SocketService>().onPlayerCheered,
+          playerIds: roomProvider.players.map((p) => p.id).toList(),
+        ),
+
         // Side bets display (if party mode)
         if (settingsProvider.sideBetsEnabled && partyProvider.getCurrentRaceSideBets().isNotEmpty)
           Positioned(
@@ -869,12 +876,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
         ],
         
-        // Chaos meter in corner
-        Positioned(
-          bottom: 20,
-          right: 20,
-          child: ChaosMeter(value: roomProvider.chaosMeter),
-        ),
       ],
     );
   }

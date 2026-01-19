@@ -18,6 +18,7 @@ class SocketService extends ChangeNotifier {
   final _chaosEventController =
       StreamController<Map<String, String>>.broadcast();
   final _errorController = StreamController<String>.broadcast();
+  final _playerCheeredController = StreamController<String>.broadcast(); // playerId
 
   // Public streams
   Stream<Room> get onRoomUpdated => _roomUpdatedController.stream;
@@ -26,6 +27,7 @@ class SocketService extends ChangeNotifier {
   Stream<RaceResult> get onRaceFinished => _raceFinishedController.stream;
   Stream<Map<String, String>> get onChaosEvent => _chaosEventController.stream;
   Stream<String> get onError => _errorController.stream;
+  Stream<String> get onPlayerCheered => _playerCheeredController.stream;
 
   // Getters
   bool get isConnected => _isConnected;
@@ -122,6 +124,15 @@ class SocketService extends ChangeNotifier {
       }
     });
 
+    _socket!.on('PLAYER_CHEERED', (data) {
+      try {
+        final playerId = (data as Map)['playerId'] as String;
+        _playerCheeredController.add(playerId);
+      } catch (e) {
+        debugPrint('Error parsing PLAYER_CHEERED: $e');
+      }
+    });
+
     _socket!.on('ERROR', (data) {
       try {
         final message = (data as Map)['message'] as String;
@@ -214,6 +225,7 @@ class SocketService extends ChangeNotifier {
     _raceFinishedController.close();
     _chaosEventController.close();
     _errorController.close();
+    _playerCheeredController.close();
     super.dispose();
   }
 }
