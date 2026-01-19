@@ -50,8 +50,26 @@ class RaceProvider extends ChangeNotifier {
     for (final entry in snapshot.positions.entries) {
       final current = _animatedPositions[entry.key] ?? 0.0;
       final target = entry.value;
-      // Smooth interpolation
-      _animatedPositions[entry.key] = current + (target - current) * 0.15;
+      
+      // Use faster interpolation near the finish line so racers blast through
+      // Also snap to target if very close (prevents slow crawl)
+      final difference = (target - current).abs();
+      
+      if (target >= 95 || difference < 1) {
+        // Near finish or very close - use faster lerp or snap
+        _animatedPositions[entry.key] = current + (target - current) * 0.4;
+      } else if (target >= 80) {
+        // Approaching finish - speed up
+        _animatedPositions[entry.key] = current + (target - current) * 0.25;
+      } else {
+        // Normal smooth interpolation
+        _animatedPositions[entry.key] = current + (target - current) * 0.15;
+      }
+      
+      // Snap to 100 if target is 100 and we're close
+      if (target >= 100 && _animatedPositions[entry.key]! >= 98) {
+        _animatedPositions[entry.key] = 100.0;
+      }
     }
   }
 
