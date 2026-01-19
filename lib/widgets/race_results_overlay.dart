@@ -108,10 +108,54 @@ class _RaceResultsOverlayState extends State<RaceResultsOverlay>
     }
   }
 
+  /// Get color for bet type
+  Color _getBetTypeColor(BetType betType) {
+    switch (betType) {
+      case BetType.win:
+        return AppTheme.neonYellow;
+      case BetType.place:
+        return AppTheme.neonCyan;
+      case BetType.longshot:
+        return AppTheme.neonPink;
+    }
+  }
+
+  /// Check if a bet won based on bet type and finish order
+  bool _didBetWin(Bet bet, List<String> finishOrder) {
+    final participantPosition = finishOrder.indexOf(bet.participantId);
+    if (participantPosition == -1) return false; // Participant didn't finish
+    
+    switch (bet.betType) {
+      case BetType.win:
+        // WIN bet: participant must finish 1st
+        return participantPosition == 0;
+      case BetType.place:
+        // PLACE bet: participant must finish in top 3
+        return participantPosition <= 2;
+      case BetType.longshot:
+        // LONGSHOT bet: participant must finish 1st (higher payout)
+        return participantPosition == 0;
+    }
+  }
+
+  /// Calculate winnings based on bet type
+  int _calculateWinnings(Bet bet, bool won) {
+    if (!won) return -bet.amount;
+    
+    switch (bet.betType) {
+      case BetType.win:
+        return bet.amount * 2; // 2x payout for win
+      case BetType.place:
+        return (bet.amount * 1.5).round(); // 1.5x payout for place
+      case BetType.longshot:
+        return bet.amount * 5; // 5x payout for longshot
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final topThree = widget.raceResult.finishOrder.take(3).toList();
-    final winnerId = topThree.isNotEmpty ? topThree[0] : null;
+    final finishOrder = widget.raceResult.finishOrder;
 
     return Stack(
       children: [
@@ -242,7 +286,7 @@ class _RaceResultsOverlayState extends State<RaceResultsOverlay>
                         begin: const Offset(0, 0.3),
                         end: Offset.zero,
                       ).animate(_playerResultsAnimation),
-                      child: _buildPlayerResults(winnerId),
+                      child: _buildPlayerResults(finishOrder),
                     ),
                   ),
               ],
@@ -383,7 +427,7 @@ class _RaceResultsOverlayState extends State<RaceResultsOverlay>
     );
   }
 
-  Widget _buildPlayerResults(String? winnerId) {
+  Widget _buildPlayerResults(List<String> finishOrder) {
     final players = widget.players ?? [];
     final bets = widget.bets ?? {};
     
@@ -412,8 +456,8 @@ class _RaceResultsOverlayState extends State<RaceResultsOverlay>
             alignment: WrapAlignment.center,
             children: players.map((player) {
               final bet = bets[player.id];
-              final won = bet != null && bet.participantId == winnerId;
-              final winnings = won ? (bet.amount * 2) : (bet?.amount ?? 0) * -1;
+              final won = bet != null && _didBetWin(bet, finishOrder);
+              final winnings = bet != null ? _calculateWinnings(bet, won) : 0;
               
               return _buildPlayerResultCard(player, bet, won, winnings);
             }).toList(),
@@ -464,6 +508,26 @@ class _RaceResultsOverlayState extends State<RaceResultsOverlay>
               ),
             ),
           ] else ...[
+            // Bet type badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getBetTypeColor(bet.betType).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: _getBetTypeColor(bet.betType).withOpacity(0.5),
+                ),
+              ),
+              child: Text(
+                bet.betType.value,
+                style: TextStyle(
+                  color: _getBetTypeColor(bet.betType),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
             // Bet info
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
