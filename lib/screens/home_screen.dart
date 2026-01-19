@@ -72,9 +72,10 @@ class _HomeScreenState extends State<HomeScreen> {
             // Top bar with room code and phase
             if (roomProvider.hasRoom) _buildTopBar(roomProvider),
 
-            // Skip phase button
+            // Skip phase button (not during racing or lobby)
             if (roomProvider.hasRoom &&
-                roomProvider.gameState != GameState.lobby)
+                roomProvider.gameState != GameState.lobby &&
+                roomProvider.gameState != GameState.racing)
               Positioned(
                 right: 16,
                 bottom: 16,
