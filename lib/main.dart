@@ -7,7 +7,7 @@ import 'providers/providers.dart';
 import 'screens/home_screen.dart';
 import 'utils/theme.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Set preferred orientations for TV
@@ -19,16 +19,29 @@ void main() {
   // Set fullscreen mode
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  runApp(const DerbyDisorderApp());
+  // Pre-load settings
+  final settingsProvider = SettingsProvider();
+  await settingsProvider.loadSettings();
+
+  runApp(DerbyDisorderApp(settingsProvider: settingsProvider));
 }
 
 class DerbyDisorderApp extends StatelessWidget {
-  const DerbyDisorderApp({super.key});
+  final SettingsProvider settingsProvider;
+
+  const DerbyDisorderApp({
+    super.key,
+    required this.settingsProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Settings provider (pre-loaded)
+        ChangeNotifierProvider.value(value: settingsProvider),
+        // Party provider
+        ChangeNotifierProvider(create: (_) => PartyProvider()),
         // Socket service
         ChangeNotifierProvider(
           create: (_) => SocketService(),

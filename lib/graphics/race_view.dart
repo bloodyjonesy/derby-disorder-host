@@ -1,9 +1,266 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/models.dart';
-import '../animations/animations.dart';
 import '../widgets/personality_indicators.dart';
 import 'race_track_painter.dart';
+
+/// Types of race animations
+enum RaceAnimationType {
+  leaderChange,
+  overtake,
+  boost,
+  stumble,
+  closeBattle,
+  finish,
+  celebration,
+}
+
+/// A single race animation instance
+class RaceAnimation {
+  final RaceAnimationType type;
+  final Offset position;
+  final List<String> participantIds;
+  final String? message;
+  double progress;
+  final double duration;
+
+  RaceAnimation({
+    required this.type,
+    required this.position,
+    this.participantIds = const [],
+    this.message,
+    this.progress = 0,
+    this.duration = 1.0,
+  });
+
+  bool get isComplete => progress >= 1.0;
+}
+
+/// Manages race animations
+class RaceAnimationManager {
+  final List<RaceAnimation> _animations = [];
+  
+  List<RaceAnimation> get activeAnimations => _animations.where((a) => !a.isComplete).toList();
+  
+  void triggerAnimation(
+    RaceAnimationType type,
+    Offset position, {
+    List<String> participantIds = const [],
+    String? message,
+    double duration = 1.0,
+  }) {
+    _animations.add(RaceAnimation(
+      type: type,
+      position: position,
+      participantIds: participantIds,
+      message: message,
+      duration: duration,
+    ));
+  }
+  
+  void update(double deltaTime) {
+    for (final animation in _animations) {
+      animation.progress += deltaTime / animation.duration;
+    }
+    _animations.removeWhere((a) => a.isComplete);
+  }
+}
+
+/// Custom painter for race effects (particles, trails, etc)
+class RaceEffectsPainter extends CustomPainter {
+  final List<RaceAnimation> animations;
+  final double animationValue;
+
+  RaceEffectsPainter({
+    required this.animations,
+    required this.animationValue,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final animation in animations) {
+      switch (animation.type) {
+        case RaceAnimationType.leaderChange:
+          _drawLeaderChange(canvas, animation);
+          break;
+        case RaceAnimationType.overtake:
+          _drawOvertake(canvas, animation);
+          break;
+        case RaceAnimationType.boost:
+          _drawBoost(canvas, animation);
+          break;
+        case RaceAnimationType.stumble:
+          _drawStumble(canvas, animation);
+          break;
+        case RaceAnimationType.closeBattle:
+          _drawCloseBattle(canvas, animation);
+          break;
+        case RaceAnimationType.finish:
+          _drawFinish(canvas, animation);
+          break;
+        case RaceAnimationType.celebration:
+          _drawCelebration(canvas, size, animation);
+          break;
+      }
+    }
+  }
+
+  void _drawLeaderChange(Canvas canvas, RaceAnimation animation) {
+    final opacity = (1.0 - animation.progress).clamp(0.0, 1.0);
+    final scale = 1.0 + animation.progress * 0.5;
+    
+    final paint = Paint()
+      ..color = Colors.yellow.withOpacity(opacity * 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+
+    canvas.drawCircle(
+      animation.position,
+      20 * scale,
+      paint,
+    );
+  }
+
+  void _drawOvertake(Canvas canvas, RaceAnimation animation) {
+    final opacity = (1.0 - animation.progress).clamp(0.0, 1.0);
+    
+    final paint = Paint()
+      ..color = Colors.cyan.withOpacity(opacity * 0.5)
+      ..style = PaintingStyle.fill;
+
+    // Draw speed lines
+    for (var i = 0; i < 3; i++) {
+      final offset = i * 8.0;
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: animation.position.translate(-offset - 20, 0),
+          width: 15,
+          height: 2,
+        ),
+        paint,
+      );
+    }
+  }
+
+  void _drawBoost(Canvas canvas, RaceAnimation animation) {
+    final opacity = (1.0 - animation.progress).clamp(0.0, 1.0);
+    
+    final paint = Paint()
+      ..color = Colors.green.withOpacity(opacity * 0.6)
+      ..style = PaintingStyle.fill;
+
+    // Draw boost particles
+    final random = math.Random(animation.position.hashCode);
+    for (var i = 0; i < 5; i++) {
+      final angle = random.nextDouble() * math.pi * 2;
+      final dist = animation.progress * 30 + random.nextDouble() * 10;
+      canvas.drawCircle(
+        animation.position.translate(
+          math.cos(angle) * dist,
+          math.sin(angle) * dist,
+        ),
+        3,
+        paint,
+      );
+    }
+  }
+
+  void _drawStumble(Canvas canvas, RaceAnimation animation) {
+    final opacity = (1.0 - animation.progress).clamp(0.0, 1.0);
+    
+    final paint = Paint()
+      ..color = Colors.red.withOpacity(opacity * 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    // Draw wobble lines
+    final wobble = math.sin(animation.progress * math.pi * 4) * 5;
+    canvas.drawLine(
+      animation.position.translate(-10, wobble),
+      animation.position.translate(10, -wobble),
+      paint,
+    );
+  }
+
+  void _drawCloseBattle(Canvas canvas, RaceAnimation animation) {
+    final opacity = (1.0 - animation.progress).clamp(0.0, 1.0);
+    
+    final paint = Paint()
+      ..color = Colors.orange.withOpacity(opacity * 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    canvas.drawCircle(animation.position, 25, paint);
+  }
+
+  void _drawFinish(Canvas canvas, RaceAnimation animation) {
+    final opacity = (1.0 - animation.progress).clamp(0.0, 1.0);
+    final scale = 1.0 + animation.progress;
+    
+    final paint = Paint()
+      ..color = Colors.yellow.withOpacity(opacity * 0.7)
+      ..style = PaintingStyle.fill;
+
+    // Draw star burst
+    final path = Path();
+    for (var i = 0; i < 8; i++) {
+      final angle = (i / 8) * math.pi * 2 - math.pi / 2;
+      final innerRadius = 10.0 * scale;
+      final outerRadius = 25.0 * scale;
+      
+      if (i == 0) {
+        path.moveTo(
+          animation.position.dx + math.cos(angle) * outerRadius,
+          animation.position.dy + math.sin(angle) * outerRadius,
+        );
+      } else {
+        path.lineTo(
+          animation.position.dx + math.cos(angle) * outerRadius,
+          animation.position.dy + math.sin(angle) * outerRadius,
+        );
+      }
+      
+      final midAngle = angle + math.pi / 8;
+      path.lineTo(
+        animation.position.dx + math.cos(midAngle) * innerRadius,
+        animation.position.dy + math.sin(midAngle) * innerRadius,
+      );
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawCelebration(Canvas canvas, Size size, RaceAnimation animation) {
+    // Draw confetti
+    final random = math.Random(42);
+    final colors = [Colors.pink, Colors.cyan, Colors.yellow, Colors.green, Colors.purple];
+    
+    for (var i = 0; i < 30; i++) {
+      final startX = random.nextDouble() * size.width;
+      final startY = -20.0;
+      final endY = size.height + 20;
+      
+      final y = startY + (endY - startY) * animation.progress;
+      final wobble = math.sin(animation.progress * math.pi * 4 + i) * 20;
+      
+      final paint = Paint()
+        ..color = colors[i % colors.length].withOpacity((1.0 - animation.progress).clamp(0.0, 1.0))
+        ..style = PaintingStyle.fill;
+
+      canvas.save();
+      canvas.translate(startX + wobble, y);
+      canvas.rotate(animation.progress * math.pi * 2);
+      canvas.drawRect(
+        const Rect.fromLTWH(-4, -2, 8, 4),
+        paint,
+      );
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(RaceEffectsPainter oldDelegate) => true;
+}
 
 /// Race view widget that displays the animated race track with effects
 class RaceView extends StatefulWidget {

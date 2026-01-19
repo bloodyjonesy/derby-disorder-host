@@ -161,12 +161,13 @@ class AppTheme {
     Color color = neonCyan,
     double fontSize = 24,
     FontWeight fontWeight = FontWeight.bold,
+    List<Shadow>? shadows,
   }) {
     return GoogleFonts.orbitron(
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
-      shadows: [
+      shadows: shadows ?? [
         Shadow(
           color: color.withOpacity(0.8),
           blurRadius: 10,

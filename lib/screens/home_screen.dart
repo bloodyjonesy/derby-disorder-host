@@ -7,6 +7,7 @@ import '../services/socket_service.dart';
 import '../widgets/widgets.dart';
 import '../graphics/graphics.dart';
 import '../utils/theme.dart';
+import 'settings_screen.dart';
 
 /// Main home screen that manages all game phases
 class HomeScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _showRaceIntro = false;
   bool _raceIntroComplete = false;
+  bool _showSettings = false;
   GameState? _lastGameState;
 
   @override
@@ -30,10 +32,36 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _openSettings() {
+    setState(() => _showSettings = true);
+  }
+
+  void _closeSettings() {
+    setState(() => _showSettings = false);
+  }
+
+  void _saveSettings(GameSettings newSettings) {
+    context.read<SettingsProvider>().updateSettings(newSettings);
+    setState(() => _showSettings = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final roomProvider = context.watch<RoomProvider>();
     final raceProvider = context.watch<RaceProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
+    final partyProvider = context.watch<PartyProvider>();
+
+    // Show settings screen
+    if (_showSettings) {
+      return Scaffold(
+        body: SettingsScreen(
+          initialSettings: settingsProvider.settings,
+          onSave: _saveSettings,
+          onCancel: _closeSettings,
+        ),
+      );
+    }
 
     return Scaffold(
       body: Focus(
@@ -67,10 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             // Main content based on game state
-            _buildContent(roomProvider, raceProvider),
+            _buildContent(roomProvider, raceProvider, settingsProvider, partyProvider),
 
             // Top bar with room code and phase
-            if (roomProvider.hasRoom) _buildTopBar(roomProvider),
+            if (roomProvider.hasRoom) _buildTopBar(roomProvider, settingsProvider, partyProvider),
 
             // Skip phase button (not during racing or lobby)
             if (roomProvider.hasRoom &&
@@ -83,19 +111,119 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: roomProvider.skipPhase,
                 ),
               ),
+
+            // Party feature overlays
+            ..._buildPartyOverlays(partyProvider, roomProvider, settingsProvider),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildContent(RoomProvider roomProvider, RaceProvider raceProvider) {
+  List<Widget> _buildPartyOverlays(
+    PartyProvider partyProvider,
+    RoomProvider roomProvider,
+    SettingsProvider settingsProvider,
+  ) {
+    final overlays = <Widget>[];
+
+    // Punishment wheel overlay
+    if (partyProvider.showPunishmentWheel && partyProvider.wheelPlayerName != null) {
+      overlays.add(
+        Positioned.fill(
+          child: PunishmentWheel(
+            options: settingsProvider.settings.punishmentOptions,
+            playerName: partyProvider.wheelPlayerName!,
+            onComplete: () => partyProvider.dismissPunishmentWheel(settingsProvider.settings),
+          ),
+        ),
+      );
+    }
+
+    // Drinking card reveal overlay
+    if (partyProvider.showDrinkingCard && partyProvider.currentCard != null) {
+      overlays.add(
+        Positioned.fill(
+          child: DrinkingCardReveal(
+            card: partyProvider.currentCard!,
+            onComplete: partyProvider.dismissDrinkingCard,
+          ),
+        ),
+      );
+    }
+
+    // Hot seat announcement overlay
+    if (partyProvider.showHotSeatAnnouncement && partyProvider.hotSeat.currentPlayerId != null) {
+      final hotSeatPlayer = roomProvider.players.where(
+        (p) => p.id == partyProvider.hotSeat.currentPlayerId,
+      ).firstOrNull;
+      
+      if (hotSeatPlayer != null) {
+        overlays.add(
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.8),
+              child: Center(
+                child: HotSeatAnnouncement(
+                  playerName: hotSeatPlayer.name,
+                  onComplete: partyProvider.dismissHotSeatAnnouncement,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    // Rivalry result overlay
+    if (partyProvider.showRivalryResult && partyProvider.currentRivalry != null) {
+      final rivalry = partyProvider.currentRivalry!;
+      final player1 = roomProvider.players.where((p) => p.id == rivalry.player1Id).firstOrNull;
+      final player2 = roomProvider.players.where((p) => p.id == rivalry.player2Id).firstOrNull;
+      
+      if (player1 != null && player2 != null) {
+        overlays.add(
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: partyProvider.dismissRivalryResult,
+              child: Container(
+                color: Colors.black.withOpacity(0.8),
+                child: Center(
+                  child: RivalryDisplay(
+                    rivalry: rivalry,
+                    player1: player1,
+                    player2: player2,
+                    showResult: true,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return overlays;
+  }
+
+  Widget _buildContent(
+    RoomProvider roomProvider, 
+    RaceProvider raceProvider,
+    SettingsProvider settingsProvider,
+    PartyProvider partyProvider,
+  ) {
     // Detect when we transition to racing phase
     if (roomProvider.gameState == GameState.racing && _lastGameState != GameState.racing) {
       _showRaceIntro = true;
       _raceIntroComplete = false;
       // Pause race updates during intro
       raceProvider.pause();
+      
+      // Start party features for new race
+      if (settingsProvider.isPartyMode) {
+        final playerIds = roomProvider.players.map((p) => p.id).toList();
+        partyProvider.startNewRace(playerIds, settingsProvider.settings);
+      }
     }
     // Reset intro state when leaving racing phase
     if (roomProvider.gameState != GameState.racing) {
@@ -110,6 +238,8 @@ class _HomeScreenState extends State<HomeScreen> {
         players: roomProvider.players,
         onCreateRoom: roomProvider.createRoom,
         onStartGame: roomProvider.startGame,
+        onOpenSettings: _openSettings,
+        settings: settingsProvider.settings,
         isLoading: roomProvider.isLoading,
       );
     }
@@ -118,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case GameState.paddock:
       case GameState.wager:
       case GameState.sabotage:
-        return _buildPaddockView(roomProvider);
+        return _buildPaddockView(roomProvider, settingsProvider, partyProvider);
       case GameState.racing:
         // Show intro first, then race
         if (_showRaceIntro && !_raceIntroComplete) {
@@ -141,15 +271,15 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           );
         }
-        return _buildRacingView(roomProvider, raceProvider);
+        return _buildRacingView(roomProvider, raceProvider, settingsProvider, partyProvider);
       case GameState.results:
-        return _buildResultsView(roomProvider);
+        return _buildResultsView(roomProvider, settingsProvider, partyProvider);
       default:
         return const SizedBox.shrink();
     }
   }
 
-  Widget _buildTopBar(RoomProvider roomProvider) {
+  Widget _buildTopBar(RoomProvider roomProvider, SettingsProvider settingsProvider, PartyProvider partyProvider) {
     return Positioned(
       top: 0,
       left: 0,
@@ -158,9 +288,64 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               RoomCodeDisplay(roomCode: roomProvider.roomCode),
+              const Spacer(),
+              
+              // Party features indicators
+              if (settingsProvider.isPartyMode) ...[
+                // Current drinking card (if any)
+                if (settingsProvider.drinkingCardsEnabled && partyProvider.currentCard != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: ActiveRuleCard(card: partyProvider.currentCard!),
+                  ),
+                
+                // Hot seat indicator
+                if (settingsProvider.hotSeatEnabled && partyProvider.hotSeat.currentPlayerId != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Builder(
+                      builder: (context) {
+                        final hotSeatPlayer = roomProvider.players.where(
+                          (p) => p.id == partyProvider.hotSeat.currentPlayerId,
+                        ).firstOrNull;
+                        if (hotSeatPlayer == null) return const SizedBox.shrink();
+                        return HotSeatIndicator(
+                          playerName: hotSeatPlayer.name,
+                          isCompact: true,
+                        );
+                      },
+                    ),
+                  ),
+                
+                // Rivalry indicator
+                if (settingsProvider.rivalriesEnabled && partyProvider.currentRivalry != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Builder(
+                      builder: (context) {
+                        final rivalry = partyProvider.currentRivalry!;
+                        final p1 = roomProvider.players.where((p) => p.id == rivalry.player1Id).firstOrNull;
+                        final p2 = roomProvider.players.where((p) => p.id == rivalry.player2Id).firstOrNull;
+                        if (p1 == null || p2 == null) return const SizedBox.shrink();
+                        return RivalryBanner(player1Name: p1.name, player2Name: p2.name);
+                      },
+                    ),
+                  ),
+                
+                // Drink tracker (compact)
+                if (settingsProvider.drinkTrackerEnabled)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: DrinkTrackerWidget(
+                      tracker: partyProvider.drinkTracker,
+                      players: roomProvider.players,
+                      compact: true,
+                    ),
+                  ),
+              ],
+              
               PhaseIndicator(
                 gameState: roomProvider.gameState,
                 timer: roomProvider.timer,
@@ -172,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPaddockView(RoomProvider roomProvider) {
+  Widget _buildPaddockView(RoomProvider roomProvider, SettingsProvider settingsProvider, PartyProvider partyProvider) {
     final isSabotage = roomProvider.gameState == GameState.sabotage;
     
     return Padding(
@@ -210,6 +395,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             ? roomProvider.getParticipant(bet.participantId)
                             : null;
                         
+                        // Check if in hot seat
+                        final isHotSeat = settingsProvider.hotSeatEnabled && 
+                            partyProvider.isInHotSeat(player.id);
+                        
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(12),
@@ -217,7 +406,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.black.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: AppTheme.neonCyan.withOpacity(0.3),
+                              color: isHotSeat 
+                                  ? AppTheme.neonOrange.withOpacity(0.5)
+                                  : AppTheme.neonCyan.withOpacity(0.3),
+                              width: isHotSeat ? 2 : 1,
                             ),
                           ),
                           child: Column(
@@ -227,14 +419,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
-                                    child: Text(
-                                      player.name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
+                                    child: Row(
+                                      children: [
+                                        if (isHotSeat)
+                                          const Padding(
+                                            padding: EdgeInsets.only(right: 4),
+                                            child: Text('🔥', style: TextStyle(fontSize: 14)),
+                                          ),
+                                        Expanded(
+                                          child: Text(
+                                            player.name,
+                                            style: TextStyle(
+                                              color: isHotSeat ? AppTheme.neonOrange : Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   Container(
@@ -328,9 +531,22 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  PhaseTitle(
-                    title: _getPhaseMessage(roomProvider.gameState),
-                    subtitle: _getPhaseSubtitle(roomProvider.gameState),
+                  Text(
+                    _getPhaseMessage(roomProvider.gameState),
+                    style: AppTheme.neonText(
+                      color: AppTheme.neonPink,
+                      fontSize: 32,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _getPhaseSubtitle(roomProvider.gameState),
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
                   // Show enhanced participants grid
@@ -362,10 +578,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         }).length;
                       }
                       final maxBets = betCounts.values.fold(0, (a, b) => a > b ? a : b);
-                      final minBets = betCounts.values.where((v) => v > 0).fold(999, (a, b) => a < b ? a : b);
                       
                       final isCrowdFavorite = betsOnThis.length == maxBets && maxBets > 0;
-                      final isUnderdog = betsOnThis.isEmpty && minBets > 0;
+                      final isUnderdog = betsOnThis.isEmpty;
                       
                       return ParticipantCard(
                         participant: participant,
@@ -389,7 +604,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRacingView(RoomProvider roomProvider, RaceProvider raceProvider) {
+  Widget _buildRacingView(
+    RoomProvider roomProvider, 
+    RaceProvider raceProvider,
+    SettingsProvider settingsProvider,
+    PartyProvider partyProvider,
+  ) {
     return Stack(
       children: [
         // Main racing content
@@ -457,17 +677,36 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+
+        // Side bets display (if party mode)
+        if (settingsProvider.sideBetsEnabled && partyProvider.getCurrentRaceSideBets().isNotEmpty)
+          Positioned(
+            top: 120,
+            right: 380,
+            child: SideBetsDisplay(
+              sideBets: partyProvider.getCurrentRaceSideBets(),
+              players: roomProvider.players,
+              participants: roomProvider.participants,
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildResultsView(RoomProvider roomProvider) {
+  Widget _buildResultsView(
+    RoomProvider roomProvider,
+    SettingsProvider settingsProvider,
+    PartyProvider partyProvider,
+  ) {
     final raceResult = roomProvider.raceResult;
     if (raceResult == null) {
       return const Center(
         child: CircularProgressIndicator(color: AppTheme.neonCyan),
       );
     }
+
+    // Check for broke players who need the wheel
+    final brokePlayers = roomProvider.players.where((p) => p.balance <= 0).toList();
 
     return Stack(
       children: [
@@ -479,9 +718,64 @@ class _HomeScreenState extends State<HomeScreen> {
           bets: roomProvider.room?.bets,
         ),
         
+        // Party mode extras on results screen
+        if (settingsProvider.isPartyMode) ...[
+          // Drink tracker
+          if (settingsProvider.drinkTrackerEnabled)
+            Positioned(
+              bottom: 100,
+              left: 20,
+              child: DrinkTrackerWidget(
+                tracker: partyProvider.drinkTracker,
+                players: roomProvider.players,
+              ),
+            ),
+          
+          // Spin wheel button for broke players
+          if (settingsProvider.punishmentWheelEnabled && brokePlayers.isNotEmpty)
+            Positioned(
+              bottom: 100,
+              right: 20,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: brokePlayers.map((player) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ElevatedButton.icon(
+                      onPressed: () => partyProvider.showWheelForPlayer(player.id, player.name),
+                      icon: const Text('🎡', style: TextStyle(fontSize: 20)),
+                      label: Text('${player.name} SPINS!'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.neonPink,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          
+          // Side bets results
+          if (settingsProvider.sideBetsEnabled && partyProvider.getCurrentRaceSideBets().isNotEmpty)
+            Positioned(
+              top: 120,
+              right: 20,
+              child: SideBetsDisplay(
+                sideBets: partyProvider.getCurrentRaceSideBets(),
+                players: roomProvider.players,
+                participants: roomProvider.participants,
+                showResults: true,
+              ),
+            ),
+        ],
+        
         // Chaos meter in corner
         Positioned(
-          bottom: 80,
+          bottom: 20,
           right: 20,
           child: ChaosMeter(value: roomProvider.chaosMeter),
         ),
