@@ -169,15 +169,15 @@ class _RaceIntroState extends State<RaceIntro>
             key: ValueKey(safeIndex),
             tween: Tween(begin: 0.0, end: 1.0),
             duration: const Duration(milliseconds: 300),
-            curve: Curves.elasticOut,
+            curve: Curves.easeOutBack, // Use easeOutBack instead of elasticOut
             builder: (context, value, child) {
               final participant = widget.participants[safeIndex];
               final color = _parseColor(participant.color);
               
               return Transform.scale(
-                scale: 0.5 + value * 0.5,
+                scale: 0.5 + value.clamp(0.0, 1.0) * 0.5,
                 child: Opacity(
-                  opacity: value,
+                  opacity: value.clamp(0.0, 1.0), // Clamp to valid range
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
