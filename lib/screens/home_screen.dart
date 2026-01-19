@@ -127,6 +127,10 @@ class _HomeScreenState extends State<HomeScreen> {
               // Start race fresh when intro completes
               final participantIds = roomProvider.participants.map((p) => p.id).toList();
               raceProvider.startFresh(participantIds);
+              
+              // Tell server to start emitting race snapshots
+              context.read<SocketService>().hostReady(roomProvider.roomCode);
+              
               setState(() {
                 _raceIntroComplete = true;
               });

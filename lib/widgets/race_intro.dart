@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../utils/theme.dart';
@@ -109,9 +110,23 @@ class _RaceIntroState extends State<RaceIntro>
             size: Size.infinite,
           ),
           
-          // Participant showcase (before countdown)
+          // Participant showcase (before countdown) - wrapped in error handler
           if (!_introComplete)
-            _buildParticipantShowcase(),
+            Builder(
+              builder: (context) {
+                try {
+                  return _buildParticipantShowcase();
+                } catch (e) {
+                  debugPrint('Error in participant showcase: $e');
+                  return Center(
+                    child: Text(
+                      'Loading...',
+                      style: const TextStyle(color: Colors.white, fontSize: 24),
+                    ),
+                  );
+                }
+              },
+            ),
           
           // Countdown overlay
           if (_introComplete)

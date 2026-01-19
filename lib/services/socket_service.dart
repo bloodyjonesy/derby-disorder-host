@@ -188,6 +188,14 @@ class SocketService extends ChangeNotifier {
     });
   }
 
+  /// Signal host is ready to start the race (after intro animation)
+  void hostReady(String roomCode) {
+    debugPrint('Sending HOST_READY for $roomCode');
+    _socket?.emit('HOST_READY', {
+      'roomCode': roomCode,
+    });
+  }
+
   /// Disconnect from the server
   void disconnect() {
     _socket?.disconnect();
