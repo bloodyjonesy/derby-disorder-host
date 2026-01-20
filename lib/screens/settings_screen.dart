@@ -189,6 +189,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     const SizedBox(height: 32),
 
+                    // Tournament Mode
+                    _buildSection(
+                      title: '🏆 TOURNAMENT MODE',
+                      child: Column(
+                        children: [
+                          _buildToggle(
+                            label: 'Tournament Mode',
+                            description: 'Multi-race competition with points & standings',
+                            emoji: '🏆',
+                            value: _settings.tournamentMode,
+                            onChanged: (v) => setState(() {
+                              _settings = _settings.copyWith(
+                                tournamentMode: v,
+                                // Auto-set race count if enabling tournament
+                                tournamentRaces: v && _settings.tournamentRaces == 0 
+                                    ? 5 
+                                    : _settings.tournamentRaces,
+                              );
+                            }),
+                          ),
+                          if (_settings.tournamentMode) ...[
+                            const SizedBox(height: 16),
+                            _buildSliderSetting(
+                              label: 'Tournament Races',
+                              value: _settings.tournamentRaces.toDouble(),
+                              min: 3,
+                              max: 10,
+                              divisions: 7,
+                              displayValue: '${_settings.tournamentRaces} races',
+                              onChanged: (v) => setState(() {
+                                _settings = _settings.copyWith(tournamentRaces: v.toInt());
+                              }),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.only(top: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.neonPurple.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppTheme.neonPurple.withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Text('🏅', style: TextStyle(fontSize: 24)),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Tournament Scoring',
+                                          style: TextStyle(
+                                            color: AppTheme.neonPurple,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Win bet: 3 pts • Place bet: 2 pts • Profit bonus: 1 pt per \$50',
+                                          style: TextStyle(
+                                            color: Colors.grey[400],
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
                     // Timer Settings
                     _buildSection(
                       title: '⏱️ PHASE TIMERS',
