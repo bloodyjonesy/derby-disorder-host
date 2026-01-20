@@ -1,165 +1,272 @@
-# Derby Disorder: The Chaos Cup - Native Host App
+# Derby Disorder: The Chaos Cup - Host Application
 
-A cross-platform Flutter application for hosting Derby Disorder betting games.
+The **TV/Display Host** application for Derby Disorder - a chaotic multiplayer party betting game. This Flutter app runs on the main display (TV, monitor, projector) and shows the race animations, leaderboards, and game state.
 
-## Platforms Supported
+## 🎮 Game Overview
 
-- **Android TV** (primary target) - Optimized for 10-foot UI with D-pad navigation
-- **Linux** - GTK-based desktop application
-- **macOS** - Native macOS application
-- **Windows** - Native Windows application
+Derby Disorder is a multiplayer party game where players bet on silly races between ridiculous characters. The host app displays:
+- Race animations and participant positions
+- Player leaderboards and balances
+- Betting phases and timers
+- Chaos events and special effects
+- Tournament standings (v2)
 
-## Features
+## 📋 Prerequisites
 
-- Real-time race visualization with custom 2D graphics
-- Socket.io integration for live game updates
-- Full game state management (Lobby, Paddock, Wager, Sabotage, Racing, Results)
-- Player and race leaderboards
-- TV-friendly navigation and controls
-- OTA update mechanism support
+### Flutter SDK
+- Flutter SDK 3.5.4 or higher
+- Dart SDK 3.5.4 or higher
 
-## Prerequisites
+Install Flutter: https://docs.flutter.dev/get-started/install
 
-- Flutter SDK 3.5.4 or later
-- For Android: Android SDK with API level 21+
-- For Linux: GTK 3.0 development libraries
-- For macOS: Xcode 14+ with command line tools
-- For Windows: Visual Studio 2019+ with C++ desktop development
+### Platform-Specific Requirements
 
-## Getting Started
+#### Linux
+```bash
+sudo apt-get install clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+```
 
-### 1. Install Dependencies
+#### Windows
+- Visual Studio 2022 with "Desktop development with C++" workload
+- Windows 10 SDK (10.0.17763.0 or later)
 
+#### macOS
+- Xcode 15 or later
+- CocoaPods: `sudo gem install cocoapods`
+
+#### Android
+- Android Studio with Android SDK
+- Android SDK Build-Tools 33.0.0+
+- Android NDK (install via Android Studio SDK Manager)
+
+#### iOS/tvOS
+- Xcode 15 or later
+- CocoaPods: `sudo gem install cocoapods`
+- Apple Developer account (for device deployment)
+
+## 🚀 Quick Start
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/bloodyjonesy/derby-disorder-host.git
+cd derby-disorder-host
+```
+
+### 2. Install Dependencies
 ```bash
 flutter pub get
 ```
 
-### 2. Run in Development
-
-```bash
-# Run on connected device/emulator
-flutter run
-
-# Run on specific platform
-flutter run -d linux
-flutter run -d macos
-flutter run -d windows
-flutter run -d android
+### 3. Configure Server URL
+Edit `lib/utils/constants.dart` and set your server URL:
+```dart
+static const String defaultSocketUrl = 'http://YOUR_SERVER_IP:3001';
+static const String defaultApiUrl = 'http://YOUR_SERVER_IP:3001';
 ```
 
-### 3. Build for Release
-
+### 4. Run in Development
 ```bash
-# Android APK (for TV)
-flutter build apk --release
-
-# Android App Bundle
-flutter build appbundle --release
-
 # Linux
-flutter build linux --release
+flutter run -d linux
 
 # macOS
-flutter build macos --release
+flutter run -d macos
 
 # Windows
-flutter build windows --release
+flutter run -d windows
+
+# Android (with device/emulator connected)
+flutter run -d android
+
+# iOS (with device/simulator)
+flutter run -d ios
 ```
 
-## Project Structure
+## 🏗️ Building for Release
+
+### Linux
+```bash
+flutter build linux --release
+```
+Output: `build/linux/x64/release/bundle/`
+
+Run the app:
+```bash
+./build/linux/x64/release/bundle/host_native
+```
+
+### Windows
+```bash
+flutter build windows --release
+```
+Output: `build/windows/x64/runner/Release/`
+
+Run: `host_native.exe`
+
+### macOS
+```bash
+flutter build macos --release
+```
+Output: `build/macos/Build/Products/Release/host_native.app`
+
+### Android APK
+```bash
+flutter build apk --release
+```
+Output: `build/app/outputs/flutter-apk/app-release.apk`
+
+### Android App Bundle (Play Store)
+```bash
+flutter build appbundle --release
+```
+Output: `build/app/outputs/bundle/release/app-release.aab`
+
+### iOS (requires Xcode & Apple Developer account)
+```bash
+flutter build ios --release
+```
+Then open `ios/Runner.xcworkspace` in Xcode to archive and distribute.
+
+### tvOS
+1. Open `ios/Runner.xcworkspace` in Xcode
+2. Change the destination to "Any tvOS Device"
+3. Update bundle identifier and provisioning profile for tvOS
+4. Build and archive
+
+**Note:** Flutter doesn't officially support tvOS, but the app can be adapted to run on Apple TV with some modifications to the iOS target.
+
+## 📦 Creating Distribution Packages
+
+### Linux AppImage
+```bash
+# Install appimagetool
+wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+chmod +x appimagetool-x86_64.AppImage
+
+# Create AppImage (after building)
+./appimagetool-x86_64.AppImage build/linux/x64/release/bundle DerbyDisorder-x86_64.AppImage
+```
+
+### Windows Installer (MSIX)
+```bash
+flutter pub run msix:create
+```
+Add to `pubspec.yaml`:
+```yaml
+msix_config:
+  display_name: Derby Disorder Host
+  publisher_display_name: Your Name
+  identity_name: com.derbydisorder.host
+  msix_version: 1.0.0.0
+```
+
+### macOS DMG
+```bash
+# Install create-dmg
+brew install create-dmg
+
+# Create DMG
+create-dmg \
+  --volname "Derby Disorder Host" \
+  --window-size 600 400 \
+  --app-drop-link 400 100 \
+  "DerbyDisorder-Host.dmg" \
+  "build/macos/Build/Products/Release/host_native.app"
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+Create a `.env` file (optional):
+```
+SOCKET_URL=http://your-server:3001
+API_URL=http://your-server:3001
+```
+
+### Build Flavors
+For different server environments:
+```bash
+# Development
+flutter run --dart-define=ENV=dev
+
+# Production
+flutter build linux --release --dart-define=ENV=prod
+```
+
+## 🎯 Platform-Specific Notes
+
+### Android TV / Fire TV
+The app includes TV-optimized navigation with D-pad support:
+- Use arrow keys to navigate
+- Enter/Select to confirm
+- Back to go back
+
+Build for Android TV:
+```bash
+flutter build apk --release --target-platform android-arm64
+```
+
+### Raspberry Pi
+For Raspberry Pi 4/5 (ARM64):
+```bash
+flutter build linux --release
+# Copy bundle to Pi and run
+```
+
+### Web (Experimental)
+```bash
+flutter build web --release
+```
+Output: `build/web/`
+
+**Note:** Web build may have limitations with socket connections depending on server CORS settings.
+
+## 📁 Project Structure
 
 ```
 lib/
-├── main.dart                    # Entry point
-├── models/                      # Data models
-│   ├── game_state.dart
-│   ├── player.dart
-│   ├── participant.dart
-│   ├── bet.dart
-│   ├── race_snapshot.dart
-│   ├── race_result.dart
-│   ├── item.dart
-│   ├── odds.dart
-│   └── room.dart
-├── services/
-│   ├── socket_service.dart      # Socket.io client
-│   ├── api_service.dart         # HTTP API client
-│   └── update_service.dart      # OTA updates
-├── providers/
-│   ├── room_provider.dart       # Room state management
-│   └── race_provider.dart       # Race state management
-├── widgets/
-│   ├── room_code_display.dart
-│   ├── phase_indicator.dart
-│   ├── player_leaderboard.dart
-│   ├── race_leaderboard.dart
-│   ├── chaos_meter.dart
-│   ├── lobby_screen.dart
-│   ├── skip_phase_button.dart
-│   ├── race_results_overlay.dart
-│   ├── tv_focusable.dart
-│   └── update_dialog.dart
-├── graphics/
-│   ├── race_track_painter.dart  # Custom race track rendering
-│   └── race_view.dart           # Race visualization widget
-├── screens/
-│   └── home_screen.dart         # Main screen
-└── utils/
-    ├── constants.dart
-    ├── theme.dart               # Neon arcade theme
-    └── performance.dart         # Performance utilities
+├── graphics/          # Race track rendering
+├── models/            # Data models
+├── providers/         # State management
+├── screens/           # Main screens
+├── services/          # API & Socket services
+├── utils/             # Constants, theme, helpers
+└── widgets/           # Reusable UI components
 ```
 
-## Configuration
+## 🐛 Troubleshooting
 
-### Server URL
-
-Update the socket server URL in `lib/utils/constants.dart`:
-
-```dart
-static const String defaultSocketUrl = 'http://your-server:3001';
-```
-
-### Update Server
-
-Configure OTA updates by setting the update server URL:
-
-```dart
-await updateService.setUpdateServerUrl('https://updates.your-domain.com');
-```
-
-## TV Navigation
-
-The app supports TV remote navigation:
-
-- **D-pad**: Navigate between UI elements
-- **Select/Enter**: Activate focused element
-- **Back**: Go back/close dialogs
-
-## Testing
-
+### Linux: GTK errors
 ```bash
-# Run all tests
-flutter test
-
-# Run with coverage
-flutter test --coverage
+export GDK_BACKEND=x11
+./host_native
 ```
 
-## Building for Android TV
-
-Ensure your `AndroidManifest.xml` includes:
-
-```xml
-<uses-feature android:name="android.software.leanback" android:required="false"/>
-<uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
-
-<intent-filter>
-    <action android:name="android.intent.action.MAIN"/>
-    <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
-</intent-filter>
+### macOS: Code signing issues
+```bash
+codesign --deep --force --sign - build/macos/Build/Products/Release/host_native.app
 ```
 
-## License
+### Android: Build failures
+```bash
+cd android
+./gradlew clean
+cd ..
+flutter clean
+flutter pub get
+flutter build apk
+```
 
-See the main project README for license information.
+### Socket connection issues
+- Ensure server is running on the correct port
+- Check firewall rules
+- Verify the server URL in `constants.dart`
+
+## 📄 License
+
+Private - All rights reserved.
+
+## 🔗 Related Repositories
+
+- **Server:** https://github.com/bloodyjonesy/derby-disorder-server
+- **Player App:** https://github.com/bloodyjonesy/derby-disorder-player
