@@ -91,7 +91,38 @@ class LobbyScreen extends StatelessWidget {
                       ),
                     ),
                 ] else ...[
-                  RoomCodeDisplay(roomCode: roomCode),
+                  // Join instructions
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.neonYellow.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.neonYellow.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '📱 Players join at:',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'ddcc.pw',
+                          style: AppTheme.neonText(
+                            color: AppTheme.neonYellow,
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  RoomCodeDisplay(roomCode: roomCode, showJoinUrl: false),
                   const SizedBox(height: 32),
 
                   // Player list
