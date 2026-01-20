@@ -15,6 +15,8 @@ class LobbyScreen extends StatelessWidget {
   final VoidCallback? onOpenSettings;
   final GameSettings? settings;
   final bool isLoading;
+  final TournamentState? tournament; // Active tournament state
+  final int raceNumber; // Current race number
 
   const LobbyScreen({
     super.key,
@@ -25,7 +27,11 @@ class LobbyScreen extends StatelessWidget {
     this.onOpenSettings,
     this.settings,
     this.isLoading = false,
+    this.tournament,
+    this.raceNumber = 0,
   });
+
+  bool get isTournamentInProgress => tournament != null && tournament!.isActive;
 
   @override
   Widget build(BuildContext context) {
@@ -125,6 +131,12 @@ class LobbyScreen extends StatelessWidget {
                   RoomCodeDisplay(roomCode: roomCode, showJoinUrl: false),
                   const SizedBox(height: 32),
 
+                  // Tournament standings (if in tournament)
+                  if (isTournamentInProgress) ...[
+                    _buildTournamentStandings(),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Player list
                   PlayerLeaderboard(
                     players: players,
@@ -152,14 +164,17 @@ class LobbyScreen extends StatelessWidget {
                   else
                     TVFocusable(
                       autofocus: true,
-                      focusColor: AppTheme.neonGreen,
+                      focusColor: isTournamentInProgress ? AppTheme.neonPurple : AppTheme.neonGreen,
                       onSelect: settings != null ? () => onStartGame(settings!) : null,
                       child: ElevatedButton.icon(
                         onPressed: settings != null ? () => onStartGame(settings!) : null,
-                        icon: const Text('🏁', style: TextStyle(fontSize: 24)),
-                        label: const Text('START GAME'),
+                        icon: Text(
+                          isTournamentInProgress ? '🏆' : '🏁', 
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                        label: Text(isTournamentInProgress ? 'NEXT RACE' : 'START GAME'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.neonGreen,
+                          backgroundColor: isTournamentInProgress ? AppTheme.neonPurple : AppTheme.neonGreen,
                           foregroundColor: AppTheme.darkBackground,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 48,
@@ -201,6 +216,138 @@ class LobbyScreen extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildTournamentStandings() {
+    if (tournament == null) return const SizedBox.shrink();
+    
+    final standings = List<TournamentStanding>.from(tournament!.standings)
+      ..sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.neonPurple.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.neonPurple, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.neonPurple.withOpacity(0.3),
+            blurRadius: 15,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('🏆', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 8),
+              Text(
+                'TOURNAMENT STANDINGS',
+                style: AppTheme.neonText(
+                  color: AppTheme.neonPurple,
+                  fontSize: 20,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text('🏆', style: TextStyle(fontSize: 24)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Race $raceNumber of ${tournament!.totalRaces}',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Standings list
+          ...standings.asMap().entries.map((entry) {
+            final index = entry.key;
+            final standing = entry.value;
+            
+            Color rankColor;
+            String medal;
+            switch (index) {
+              case 0:
+                rankColor = AppTheme.neonYellow;
+                medal = '🥇';
+                break;
+              case 1:
+                rankColor = Colors.grey[300]!;
+                medal = '🥈';
+                break;
+              case 2:
+                rankColor = AppTheme.neonOrange;
+                medal = '🥉';
+                break;
+              default:
+                rankColor = Colors.grey;
+                medal = '#${index + 1}';
+            }
+
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: index == 0 
+                    ? AppTheme.neonYellow.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: index == 0 
+                    ? Border.all(color: AppTheme.neonYellow.withOpacity(0.5))
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 36,
+                    child: Text(
+                      medal,
+                      style: TextStyle(
+                        fontSize: index < 3 ? 20 : 14,
+                        color: rankColor,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      standing.playerName,
+                      style: TextStyle(
+                        color: index == 0 ? AppTheme.neonYellow : Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: rankColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${standing.totalPoints} pts',
+                      style: TextStyle(
+                        color: rankColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 

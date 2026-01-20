@@ -345,6 +345,8 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpenSettings: _openSettings,
         settings: settingsProvider.settings,
         isLoading: roomProvider.isLoading,
+        tournament: roomProvider.tournament,
+        raceNumber: roomProvider.raceNumber,
       );
     }
 
