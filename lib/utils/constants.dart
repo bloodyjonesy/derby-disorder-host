@@ -2,11 +2,8 @@
 class AppConstants {
   AppConstants._();
 
-  /// Server URL for production
-  static const String defaultSocketUrl = String.fromEnvironment(
-    'SERVER_URL',
-    defaultValue: 'https://api.ddcc.pw',
-  );
+  /// Server URL - production
+  static const String defaultSocketUrl = 'https://api.ddcc.pw';
 
   /// Player join URL
   static const String playerJoinUrl = 'ddcc.pw';
