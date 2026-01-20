@@ -5,6 +5,7 @@ import 'bet.dart';
 import 'race_snapshot.dart';
 import 'race_result.dart';
 import 'item.dart';
+import 'tournament.dart';
 
 /// Represents a game room
 class Room {
@@ -23,6 +24,8 @@ class Room {
   // Party mode fields from server
   final String? hotSeatPlayerId; // Player in the hot seat
   final String? favoriteParticipantId; // The race favorite
+  // Tournament mode (v2)
+  final TournamentState? tournament;
 
   const Room({
     required this.roomCode,
@@ -39,6 +42,7 @@ class Room {
     this.settings,
     this.hotSeatPlayerId,
     this.favoriteParticipantId,
+    this.tournament,
   });
 
   factory Room.fromJson(Map<String, dynamic> json) {
@@ -60,6 +64,13 @@ class Room {
       raceData = raceDataJson
           .map((e) => RaceSnapshot.fromJson(e as Map<String, dynamic>))
           .toList();
+    }
+
+    // Parse tournament
+    TournamentState? tournament;
+    final tournamentJson = json['tournament'];
+    if (tournamentJson != null && tournamentJson is Map) {
+      tournament = TournamentState.fromJson(Map<String, dynamic>.from(tournamentJson));
     }
 
     return Room(
@@ -88,6 +99,7 @@ class Room {
       settings: json['settings'] as Map<String, dynamic>?,
       hotSeatPlayerId: json['hotSeatPlayerId'] as String?,
       favoriteParticipantId: json['favoriteParticipantId'] as String?,
+      tournament: tournament,
     );
   }
 
@@ -107,8 +119,15 @@ class Room {
       'settings': settings,
       'hotSeatPlayerId': hotSeatPlayerId,
       'favoriteParticipantId': favoriteParticipantId,
+      'tournament': tournament?.toJson(),
     };
   }
+
+  /// Is tournament mode active?
+  bool get isTournamentActive => tournament?.isActive ?? false;
+
+  /// Get non-host players
+  List<Player> get realPlayers => players.where((p) => p.name != 'Host').toList();
 
   Room copyWith({
     String? roomCode,
@@ -125,6 +144,7 @@ class Room {
     Map<String, dynamic>? settings,
     String? hotSeatPlayerId,
     String? favoriteParticipantId,
+    TournamentState? tournament,
   }) {
     return Room(
       roomCode: roomCode ?? this.roomCode,
@@ -141,6 +161,7 @@ class Room {
       settings: settings ?? this.settings,
       hotSeatPlayerId: hotSeatPlayerId ?? this.hotSeatPlayerId,
       favoriteParticipantId: favoriteParticipantId ?? this.favoriteParticipantId,
+      tournament: tournament ?? this.tournament,
     );
   }
 

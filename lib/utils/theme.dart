@@ -12,6 +12,7 @@ class AppTheme {
   static const Color neonGreen = Color(0xFF00FF00);
   static const Color neonOrange = Color(0xFFFF8800);
   static const Color neonRed = Color(0xFFFF0044);
+  static const Color neonPurple = Color(0xFF9B59B6); // Tournament purple
 
   // Background colors
   static const Color darkBackground = Color(0xFF0A0A1A);

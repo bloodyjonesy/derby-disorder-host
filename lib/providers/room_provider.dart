@@ -13,9 +13,16 @@ class RoomProvider extends ChangeNotifier {
   String? _roomCode;
   bool _isLoading = false;
   String? _error;
+  
+  // Tournament state (v2)
+  ChaosEvent? _currentChaosEvent;
+  String? _tournamentChampionId;
 
   // Subscriptions
   StreamSubscription<Room>? _roomSubscription;
+  StreamSubscription<ChaosEvent>? _chaosEventSubscription;
+  StreamSubscription<List<TournamentStanding>>? _tournamentStandingsSubscription;
+  StreamSubscription<String>? _tournamentCompleteSubscription;
 
   RoomProvider({
     required SocketService socketService,
@@ -31,9 +38,17 @@ class RoomProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasRoom => _room != null;
+  
+  // Tournament getters (v2)
+  ChaosEvent? get currentChaosEvent => _currentChaosEvent;
+  String? get tournamentChampionId => _tournamentChampionId;
+  TournamentState? get tournament => _room?.tournament;
+  bool get isTournamentActive => _room?.isTournamentActive ?? false;
+  int get raceNumber => _room?.raceNumber ?? 1;
 
   // Convenience getters
   List<Player> get players => _room?.players ?? [];
+  List<Player> get realPlayers => _room?.realPlayers ?? [];
   List<Participant> get participants => _room?.participants ?? [];
   GameState get gameState => _room?.gameState ?? GameState.lobby;
   int get chaosMeter => _room?.chaosMeter ?? 0;
@@ -45,6 +60,39 @@ class RoomProvider extends ChangeNotifier {
       _room = room;
       _roomCode = room.roomCode;
       notifyListeners();
+    });
+
+    // Chaos event subscription (v2)
+    _chaosEventSubscription = _socketService.onChaosEvent.listen((event) {
+      _currentChaosEvent = event;
+      notifyListeners();
+      
+      // Auto-dismiss after duration
+      final duration = event.duration ?? 3;
+      Future.delayed(Duration(seconds: duration + 1), () {
+        if (_currentChaosEvent == event) {
+          _currentChaosEvent = null;
+          notifyListeners();
+        }
+      });
+    });
+
+    // Tournament standings subscription
+    _tournamentStandingsSubscription = _socketService.onTournamentStandings.listen((standings) {
+      // Standings come through ROOM_UPDATED, but we can handle extra updates here
+      notifyListeners();
+    });
+
+    // Tournament complete subscription
+    _tournamentCompleteSubscription = _socketService.onTournamentComplete.listen((championId) {
+      _tournamentChampionId = championId;
+      notifyListeners();
+      
+      // Clear champion display after 30 seconds
+      Future.delayed(const Duration(seconds: 30), () {
+        _tournamentChampionId = null;
+        notifyListeners();
+      });
     });
   }
 
@@ -114,9 +162,24 @@ class RoomProvider extends ChangeNotifier {
     return _room?.isFavorite(participantId) ?? false;
   }
 
+  /// Clear the current chaos event
+  void clearChaosEvent() {
+    _currentChaosEvent = null;
+    notifyListeners();
+  }
+
+  /// Clear tournament champion display
+  void clearTournamentChampion() {
+    _tournamentChampionId = null;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _roomSubscription?.cancel();
+    _chaosEventSubscription?.cancel();
+    _tournamentStandingsSubscription?.cancel();
+    _tournamentCompleteSubscription?.cancel();
     super.dispose();
   }
 }

@@ -15,19 +15,23 @@ class SocketService extends ChangeNotifier {
   final _gameStateChangedController = StreamController<GameState>.broadcast();
   final _raceSnapshotController = StreamController<RaceSnapshot>.broadcast();
   final _raceFinishedController = StreamController<RaceResult>.broadcast();
-  final _chaosEventController =
-      StreamController<Map<String, String>>.broadcast();
+  final _chaosEventController = StreamController<ChaosEvent>.broadcast();
   final _errorController = StreamController<String>.broadcast();
   final _playerCheeredController = StreamController<String>.broadcast(); // playerId
+  // Tournament events (v2)
+  final _tournamentStandingsController = StreamController<List<TournamentStanding>>.broadcast();
+  final _tournamentCompleteController = StreamController<String>.broadcast(); // championId
 
   // Public streams
   Stream<Room> get onRoomUpdated => _roomUpdatedController.stream;
   Stream<GameState> get onGameStateChanged => _gameStateChangedController.stream;
   Stream<RaceSnapshot> get onRaceSnapshot => _raceSnapshotController.stream;
   Stream<RaceResult> get onRaceFinished => _raceFinishedController.stream;
-  Stream<Map<String, String>> get onChaosEvent => _chaosEventController.stream;
+  Stream<ChaosEvent> get onChaosEvent => _chaosEventController.stream;
   Stream<String> get onError => _errorController.stream;
   Stream<String> get onPlayerCheered => _playerCheeredController.stream;
+  Stream<List<TournamentStanding>> get onTournamentStandings => _tournamentStandingsController.stream;
+  Stream<String> get onTournamentComplete => _tournamentCompleteController.stream;
 
   // Getters
   bool get isConnected => _isConnected;
@@ -117,10 +121,31 @@ class SocketService extends ChangeNotifier {
 
     _socket!.on('CHAOS_EVENT', (data) {
       try {
-        final event = Map<String, String>.from(data as Map);
+        final event = ChaosEvent.fromJson(data as Map<String, dynamic>);
         _chaosEventController.add(event);
       } catch (e) {
         debugPrint('Error parsing CHAOS_EVENT: $e');
+      }
+    });
+
+    // Tournament events (v2)
+    _socket!.on('TOURNAMENT_STANDINGS_UPDATED', (data) {
+      try {
+        final standings = (data as List<dynamic>)
+            .map((e) => TournamentStanding.fromJson(e as Map<String, dynamic>))
+            .toList();
+        _tournamentStandingsController.add(standings);
+      } catch (e) {
+        debugPrint('Error parsing TOURNAMENT_STANDINGS_UPDATED: $e');
+      }
+    });
+
+    _socket!.on('TOURNAMENT_COMPLETE', (data) {
+      try {
+        final championId = data['championId'] as String;
+        _tournamentCompleteController.add(championId);
+      } catch (e) {
+        debugPrint('Error parsing TOURNAMENT_COMPLETE: $e');
       }
     });
 
@@ -228,6 +253,8 @@ class SocketService extends ChangeNotifier {
     _chaosEventController.close();
     _errorController.close();
     _playerCheeredController.close();
+    _tournamentStandingsController.close();
+    _tournamentCompleteController.close();
     super.dispose();
   }
 }

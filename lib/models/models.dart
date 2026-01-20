@@ -13,3 +13,5 @@ export 'odds.dart';
 export 'room.dart';
 export 'game_settings.dart';
 export 'party_state.dart';
+export 'tournament.dart';
+export 'chaos_event.dart';

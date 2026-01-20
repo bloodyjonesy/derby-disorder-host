@@ -13,6 +13,10 @@ class GameSettings {
   final int startingBalance;
   final int hypePointsPerRound;
   
+  // Tournament mode (v2)
+  final bool tournamentMode;    // Enable tournament scoring & standings
+  final int tournamentRaces;    // Number of races in tournament (when tournamentMode is true)
+  
   // Timer settings (in seconds)
   final int paddockDuration;
   final int wagerDuration;
@@ -39,6 +43,8 @@ class GameSettings {
     this.maxRaces = 5,
     this.startingBalance = 100,
     this.hypePointsPerRound = 5,
+    this.tournamentMode = false,
+    this.tournamentRaces = 5,
     this.paddockDuration = 30,
     this.wagerDuration = 45,
     this.sabotageDuration = 30,
@@ -110,6 +116,8 @@ class GameSettings {
     int? maxRaces,
     int? startingBalance,
     int? hypePointsPerRound,
+    bool? tournamentMode,
+    int? tournamentRaces,
     int? paddockDuration,
     int? wagerDuration,
     int? sabotageDuration,
@@ -129,6 +137,8 @@ class GameSettings {
       maxRaces: maxRaces ?? this.maxRaces,
       startingBalance: startingBalance ?? this.startingBalance,
       hypePointsPerRound: hypePointsPerRound ?? this.hypePointsPerRound,
+      tournamentMode: tournamentMode ?? this.tournamentMode,
+      tournamentRaces: tournamentRaces ?? this.tournamentRaces,
       paddockDuration: paddockDuration ?? this.paddockDuration,
       wagerDuration: wagerDuration ?? this.wagerDuration,
       sabotageDuration: sabotageDuration ?? this.sabotageDuration,
@@ -151,6 +161,8 @@ class GameSettings {
       'maxRaces': maxRaces,
       'startingBalance': startingBalance,
       'hypePointsPerRound': hypePointsPerRound,
+      'tournamentMode': tournamentMode,
+      'tournamentRaces': tournamentRaces,
       'paddockDuration': paddockDuration,
       'wagerDuration': wagerDuration,
       'sabotageDuration': sabotageDuration,
@@ -176,6 +188,8 @@ class GameSettings {
       maxRaces: json['maxRaces'] as int? ?? 5,
       startingBalance: json['startingBalance'] as int? ?? 100,
       hypePointsPerRound: json['hypePointsPerRound'] as int? ?? 5,
+      tournamentMode: json['tournamentMode'] as bool? ?? false,
+      tournamentRaces: json['tournamentRaces'] as int? ?? 5,
       paddockDuration: json['paddockDuration'] as int? ?? 30,
       wagerDuration: json['wagerDuration'] as int? ?? 45,
       sabotageDuration: json['sabotageDuration'] as int? ?? 30,
@@ -198,4 +212,7 @@ class GameSettings {
       ],
     );
   }
+
+  /// Whether this is a tournament (with standings and points)
+  bool get isTournament => tournamentMode && tournamentRaces > 0;
 }

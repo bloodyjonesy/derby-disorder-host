@@ -125,7 +125,71 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Party feature overlays
             ..._buildPartyOverlays(partyProvider, roomProvider, settingsProvider),
+
+            // Chaos event overlay (v2)
+            if (roomProvider.currentChaosEvent != null)
+              ChaosEventOverlay(
+                event: roomProvider.currentChaosEvent!,
+                onDismiss: roomProvider.clearChaosEvent,
+              ),
+
+            // Tournament champion celebration overlay (v2)
+            if (roomProvider.tournamentChampionId != null && roomProvider.tournament != null)
+              _buildChampionCelebration(roomProvider),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChampionCelebration(RoomProvider roomProvider) {
+    final tournament = roomProvider.tournament!;
+    final championStanding = tournament.standings.where(
+      (s) => s.playerId == roomProvider.tournamentChampionId
+    ).firstOrNull;
+    
+    if (championStanding == null) return const SizedBox.shrink();
+    
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.9),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('🏆', style: TextStyle(fontSize: 100)),
+              const SizedBox(height: 20),
+              Text(
+                'TOURNAMENT CHAMPION!',
+                style: AppTheme.neonText(
+                  color: AppTheme.neonYellow,
+                  fontSize: 48,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                '👑 ${championStanding.playerName} 👑',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '${championStanding.totalPoints} Points • ${championStanding.raceWins} Wins • \$${championStanding.totalEarnings} Earned',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 20,
+                ),
+              ),
+              const SizedBox(height: 40),
+              TournamentStandings(
+                tournament: tournament,
+                showChampion: true,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -274,6 +338,8 @@ class _HomeScreenState extends State<HomeScreen> {
           settings: {
             'maxRaces': settings.maxRaces,
             'startingBalance': settings.startingBalance,
+            'tournamentMode': settings.tournamentMode,
+            'tournamentRaces': settings.tournamentRaces,
           },
         ),
         onOpenSettings: _openSettings,
@@ -388,9 +454,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
               ],
               
-              PhaseIndicator(
-                gameState: roomProvider.gameState,
-                timer: roomProvider.timer,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  PhaseIndicator(
+                    gameState: roomProvider.gameState,
+                    timer: roomProvider.timer,
+                  ),
+                  // Tournament progress (v2)
+                  if (roomProvider.isTournamentActive && roomProvider.tournament != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.neonPurple.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.neonPurple),
+                        ),
+                        child: Text(
+                          '🏆 Race ${roomProvider.raceNumber} / ${roomProvider.tournament!.totalRaces}',
+                          style: AppTheme.neonText(
+                            color: AppTheme.neonPurple,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),
@@ -891,7 +982,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
         ],
-        
+
+        // Tournament standings (v2) - show on results screen
+        if (roomProvider.isTournamentActive && roomProvider.tournament != null)
+          Positioned(
+            top: 120,
+            left: 20,
+            child: TournamentStandings(
+              tournament: roomProvider.tournament!,
+              showChampion: false,
+            ),
+          ),
       ],
     );
   }

@@ -23,3 +23,5 @@ export 'drink_tracker_widget.dart';
 export 'hot_seat_indicator.dart';
 export 'side_bets_display.dart';
 export 'cheer_animation.dart';
+export 'tournament_standings.dart';
+export 'chaos_event_overlay.dart';
