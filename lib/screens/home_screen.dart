@@ -325,7 +325,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _lastGameState = roomProvider.gameState;
 
     if (!roomProvider.hasRoom || roomProvider.gameState == GameState.lobby) {
-      return LobbyScreen(
+      // Use the new enhanced lobby with improved UI
+      return EnhancedLobby(
         roomCode: roomProvider.roomCode,
         players: roomProvider.players,
         onCreateRoom: roomProvider.createRoom,
