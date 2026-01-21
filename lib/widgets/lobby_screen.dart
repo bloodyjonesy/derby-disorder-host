@@ -7,7 +7,7 @@ import 'player_leaderboard.dart';
 import 'tv_focusable.dart';
 
 /// Lobby screen widget with TV remote support
-class LobbyScreen extends StatelessWidget {
+class LobbyScreen extends StatefulWidget {
   final String? roomCode;
   final List<Player> players;
   final VoidCallback onCreateRoom;
@@ -31,11 +31,63 @@ class LobbyScreen extends StatelessWidget {
     this.raceNumber = 0,
   });
 
-  bool get isTournamentInProgress => tournament != null && tournament!.isActive;
+  @override
+  State<LobbyScreen> createState() => _LobbyScreenState();
+}
+
+class _LobbyScreenState extends State<LobbyScreen> {
+  final FocusNode _createRoomFocusNode = FocusNode();
+  final FocusNode _startGameFocusNode = FocusNode();
+  final FocusNode _settingsFocusNode = FocusNode();
+
+  bool get isTournamentInProgress => widget.tournament != null && widget.tournament!.isActive;
+
+  @override
+  void initState() {
+    super.initState();
+    // Request focus on the appropriate button after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestInitialFocus();
+    });
+  }
+
+  @override
+  void didUpdateWidget(LobbyScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-request focus when room state changes
+    if (oldWidget.roomCode != widget.roomCode || 
+        oldWidget.players.length != widget.players.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _requestInitialFocus();
+      });
+    }
+  }
+
+  void _requestInitialFocus() {
+    if (!mounted) return;
+    
+    if (widget.roomCode == null && !widget.isLoading) {
+      // Focus on Create Room button
+      _createRoomFocusNode.requestFocus();
+    } else if (widget.roomCode != null && widget.players.isNotEmpty) {
+      // Focus on Start Game button
+      _startGameFocusNode.requestFocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _createRoomFocusNode.dispose();
+    _startGameFocusNode.dispose();
+    _settingsFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return FocusTraversalGroup(
+      policy: WidgetOrderTraversalPolicy(),
+      child: Stack(
       children: [
         Center(
           child: SingleChildScrollView(
@@ -65,21 +117,21 @@ class LobbyScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Game mode indicator
-                if (settings != null) _buildGameModeIndicator(),
+                if (widget.settings != null) _buildGameModeIndicator(),
 
                 const SizedBox(height: 32),
 
                 // Room code or create button
-                if (roomCode == null) ...[
-                  if (isLoading)
+                if (widget.roomCode == null) ...[
+                  if (widget.isLoading)
                     const CircularProgressIndicator(color: AppTheme.neonCyan)
                   else
                     TVFocusable(
-                      autofocus: true,
+                      focusNode: _createRoomFocusNode,
                       focusColor: AppTheme.neonCyan,
-                      onSelect: onCreateRoom,
+                      onSelect: widget.onCreateRoom,
                       child: ElevatedButton.icon(
-                        onPressed: onCreateRoom,
+                        onPressed: widget.onCreateRoom,
                         icon: const Icon(Icons.add_circle_outline),
                         label: const Text('CREATE ROOM'),
                         style: ElevatedButton.styleFrom(
@@ -128,7 +180,7 @@ class LobbyScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   
-                  RoomCodeDisplay(roomCode: roomCode, showJoinUrl: false),
+                  RoomCodeDisplay(roomCode: widget.roomCode, showJoinUrl: false),
                   const SizedBox(height: 32),
 
                   // Tournament standings (if in tournament)
@@ -139,14 +191,14 @@ class LobbyScreen extends StatelessWidget {
 
                   // Player list
                   PlayerLeaderboard(
-                    players: players,
+                    players: widget.players,
                     bets: const {},
                     participants: const [],
                   ),
                   const SizedBox(height: 32),
 
                   // Start button or waiting message
-                  if (players.isEmpty)
+                  if (widget.players.isEmpty)
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -163,11 +215,11 @@ class LobbyScreen extends StatelessWidget {
                     )
                   else
                     TVFocusable(
-                      autofocus: true,
+                      focusNode: _startGameFocusNode,
                       focusColor: isTournamentInProgress ? AppTheme.neonPurple : AppTheme.neonGreen,
-                      onSelect: settings != null ? () => onStartGame(settings!) : null,
+                      onSelect: widget.settings != null ? () => widget.onStartGame(widget.settings!) : null,
                       child: ElevatedButton.icon(
-                        onPressed: settings != null ? () => onStartGame(settings!) : null,
+                        onPressed: widget.settings != null ? () => widget.onStartGame(widget.settings!) : null,
                         icon: Text(
                           isTournamentInProgress ? '🏆' : '🏁', 
                           style: const TextStyle(fontSize: 24),
@@ -194,16 +246,17 @@ class LobbyScreen extends StatelessWidget {
         ),
 
         // Settings button (top right)
-        if (onOpenSettings != null)
+        if (widget.onOpenSettings != null)
           Positioned(
             top: 16,
             right: 16,
             child: SafeArea(
               child: TVFocusable(
+                focusNode: _settingsFocusNode,
                 focusColor: AppTheme.neonCyan,
-                onSelect: onOpenSettings,
+                onSelect: widget.onOpenSettings,
                 child: IconButton.filled(
-                  onPressed: onOpenSettings,
+                  onPressed: widget.onOpenSettings,
                   icon: const Icon(Icons.settings),
                   style: IconButton.styleFrom(
                     backgroundColor: AppTheme.surfaceColor,
@@ -216,13 +269,14 @@ class LobbyScreen extends StatelessWidget {
             ),
           ),
       ],
+      ),
     );
   }
 
   Widget _buildTournamentStandings() {
-    if (tournament == null) return const SizedBox.shrink();
+    if (widget.tournament == null) return const SizedBox.shrink();
     
-    final standings = List<TournamentStanding>.from(tournament!.standings)
+    final standings = List<TournamentStanding>.from(widget.tournament!.standings)
       ..sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
 
     return Container(
@@ -261,7 +315,7 @@ class LobbyScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Race $raceNumber of ${tournament!.totalRaces}',
+            'Race ${widget.raceNumber} of ${widget.tournament!.totalRaces}',
             style: TextStyle(
               color: Colors.grey[400],
               fontSize: 14,
@@ -352,7 +406,7 @@ class LobbyScreen extends StatelessWidget {
   }
 
   Widget _buildGameModeIndicator() {
-    final mode = settings?.gameMode ?? GameMode.regular;
+    final mode = widget.settings?.gameMode ?? GameMode.regular;
     
     Color color;
     String label;
@@ -378,9 +432,9 @@ class LobbyScreen extends StatelessWidget {
 
     return TVFocusable(
       focusColor: color,
-      onSelect: onOpenSettings,
+      onSelect: widget.onOpenSettings,
       child: GestureDetector(
-        onTap: onOpenSettings,
+        onTap: widget.onOpenSettings,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           decoration: BoxDecoration(

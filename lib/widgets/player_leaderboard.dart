@@ -26,7 +26,7 @@ class PlayerLeaderboard extends StatelessWidget {
       orElse: () => participants.first,
     );
     
-    return '${bet.betType.value.toLowerCase()} on ${participant.name}';
+    return '\$${bet.amount} ${bet.betType.value.toLowerCase()} on ${participant.name}';
   }
 
   @override
@@ -154,7 +154,27 @@ class PlayerLeaderboard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (player.isBroke)
+                    if (player.isViewer)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.neonPurple.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          '👁 VIEWER',
+                          style: TextStyle(
+                            color: AppTheme.neonPurple,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    else if (player.isBroke)
                       Container(
                         margin: const EdgeInsets.only(left: 8),
                         padding: const EdgeInsets.symmetric(

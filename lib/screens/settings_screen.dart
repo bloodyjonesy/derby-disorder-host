@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/models.dart';
 import '../utils/theme.dart';
+import '../widgets/tv_focusable.dart';
 
 /// Settings screen for configuring game options
 class SettingsScreen extends StatefulWidget {
@@ -72,9 +74,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: widget.onCancel,
+                  TVFocusable(
+                    autofocus: true,
+                    focusColor: AppTheme.neonCyan,
+                    onSelect: widget.onCancel,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: widget.onCancel,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Text(
@@ -85,16 +92,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: () => widget.onSave(_settings),
-                    icon: const Icon(Icons.check),
-                    label: const Text('SAVE'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.neonGreen,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
+                  TVFocusable(
+                    focusColor: AppTheme.neonGreen,
+                    onSelect: () => widget.onSave(_settings),
+                    child: ElevatedButton.icon(
+                      onPressed: () => widget.onSave(_settings),
+                      icon: const Icon(Icons.check),
+                      label: const Text('SAVE'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.neonGreen,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -431,8 +442,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isSelected = _settings.gameMode == mode;
 
     return Expanded(
-      child: GestureDetector(
-        onTap: () => _setGameMode(mode),
+      child: TVFocusable(
+        focusColor: color,
+        onSelect: () => _setGameMode(mode),
+        borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(20),
@@ -490,41 +503,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String displayValue,
     required Function(double) onChanged,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 180,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-          ),
-          Expanded(
-            child: Slider(
-              value: value,
-              min: min,
-              max: max,
-              divisions: divisions,
-              activeColor: AppTheme.neonCyan,
-              inactiveColor: Colors.grey[700],
-              onChanged: onChanged,
-            ),
-          ),
-          SizedBox(
-            width: 100,
-            child: Text(
-              displayValue,
-              style: const TextStyle(
-                color: AppTheme.neonCyan,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
-      ),
+    final step = (max - min) / divisions;
+    
+    return _TVSlider(
+      label: label,
+      value: value,
+      min: min,
+      max: max,
+      step: step,
+      displayValue: displayValue,
+      onChanged: onChanged,
     );
   }
 
@@ -535,47 +523,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool value,
     required Function(bool) onChanged,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: value ? AppTheme.neonGreen.withOpacity(0.5) : Colors.grey.withOpacity(0.2),
+    return TVFocusable(
+      focusColor: value ? AppTheme.neonGreen : AppTheme.neonCyan,
+      onSelect: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: value ? AppTheme.neonGreen.withOpacity(0.5) : Colors.grey.withOpacity(0.2),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 24)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+        child: Row(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 24)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  description,
-                  style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 12,
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: AppTheme.neonGreen,
-          ),
-        ],
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              activeColor: AppTheme.neonGreen,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -593,6 +586,140 @@ class _SettingsScreenState extends State<SettingsScreen> {
         style: const TextStyle(
           color: AppTheme.neonGreen,
           fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
+
+/// TV-friendly slider that responds to D-pad left/right
+class _TVSlider extends StatefulWidget {
+  final String label;
+  final double value;
+  final double min;
+  final double max;
+  final double step;
+  final String displayValue;
+  final Function(double) onChanged;
+
+  const _TVSlider({
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.step,
+    required this.displayValue,
+    required this.onChanged,
+  });
+
+  @override
+  State<_TVSlider> createState() => _TVSliderState();
+}
+
+class _TVSliderState extends State<_TVSlider> {
+  bool _isFocused = false;
+
+  void _decrease() {
+    final newValue = (widget.value - widget.step).clamp(widget.min, widget.max);
+    widget.onChanged(newValue);
+    HapticFeedback.selectionClick();
+  }
+
+  void _increase() {
+    final newValue = (widget.value + widget.step).clamp(widget.min, widget.max);
+    widget.onChanged(newValue);
+    HapticFeedback.selectionClick();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Focus(
+        onFocusChange: (hasFocus) => setState(() => _isFocused = hasFocus),
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent || event is KeyRepeatEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+                event.logicalKey == LogicalKeyboardKey.keyA) {
+              _decrease();
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
+                event.logicalKey == LogicalKeyboardKey.keyD) {
+              _increase();
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isFocused ? AppTheme.neonCyan : Colors.transparent,
+              width: 2,
+            ),
+            boxShadow: _isFocused
+                ? [
+                    BoxShadow(
+                      color: AppTheme.neonCyan.withOpacity(0.4),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 180,
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: _isFocused ? AppTheme.neonCyan : Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              // Decrease button
+              if (_isFocused)
+                IconButton(
+                  icon: Icon(Icons.chevron_left, color: AppTheme.neonCyan),
+                  onPressed: _decrease,
+                ),
+              Expanded(
+                child: Slider(
+                  value: widget.value,
+                  min: widget.min,
+                  max: widget.max,
+                  divisions: ((widget.max - widget.min) / widget.step).round(),
+                  activeColor: _isFocused ? AppTheme.neonCyan : AppTheme.neonCyan.withOpacity(0.7),
+                  inactiveColor: Colors.grey[700],
+                  onChanged: widget.onChanged,
+                ),
+              ),
+              // Increase button
+              if (_isFocused)
+                IconButton(
+                  icon: Icon(Icons.chevron_right, color: AppTheme.neonCyan),
+                  onPressed: _increase,
+                ),
+              SizedBox(
+                width: 100,
+                child: Text(
+                  widget.displayValue,
+                  style: TextStyle(
+                    color: _isFocused ? AppTheme.neonCyan : AppTheme.neonCyan.withOpacity(0.8),
+                    fontWeight: FontWeight.bold,
+                    fontSize: _isFocused ? 16 : 14,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

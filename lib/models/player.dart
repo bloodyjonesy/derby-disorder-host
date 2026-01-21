@@ -6,6 +6,7 @@ class Player {
   final int hype;
   final String socketId;
   final bool isBroke; // true when balance reaches 0, player stays in game but can't bet
+  final bool isViewer; // true if joined after tournament started - can watch but not bet
 
   const Player({
     required this.id,
@@ -14,16 +15,18 @@ class Player {
     required this.hype,
     required this.socketId,
     required this.isBroke,
+    this.isViewer = false,
   });
 
   factory Player.fromJson(Map<String, dynamic> json) {
     return Player(
       id: json['id'] as String,
       name: json['name'] as String,
-      balance: json['balance'] as int,
-      hype: json['hype'] as int,
+      balance: json['balance'] as int? ?? 0,
+      hype: json['hype'] as int? ?? 0,
       socketId: json['socketId'] as String,
       isBroke: json['isBroke'] as bool? ?? false,
+      isViewer: json['isViewer'] as bool? ?? false,
     );
   }
 
@@ -35,6 +38,7 @@ class Player {
       'hype': hype,
       'socketId': socketId,
       'isBroke': isBroke,
+      'isViewer': isViewer,
     };
   }
 
@@ -45,6 +49,7 @@ class Player {
     int? hype,
     String? socketId,
     bool? isBroke,
+    bool? isViewer,
   }) {
     return Player(
       id: id ?? this.id,
@@ -53,6 +58,7 @@ class Player {
       hype: hype ?? this.hype,
       socketId: socketId ?? this.socketId,
       isBroke: isBroke ?? this.isBroke,
+      isViewer: isViewer ?? this.isViewer,
     );
   }
 }

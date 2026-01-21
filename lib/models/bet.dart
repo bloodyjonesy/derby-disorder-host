@@ -30,11 +30,22 @@ class Bet {
   });
 
   factory Bet.fromJson(Map<String, dynamic> json) {
+    // Handle amount being int, double, or string
+    int amount = 0;
+    final amountValue = json['amount'];
+    if (amountValue is int) {
+      amount = amountValue;
+    } else if (amountValue is double) {
+      amount = amountValue.toInt();
+    } else if (amountValue is String) {
+      amount = int.tryParse(amountValue) ?? 0;
+    }
+    
     return Bet(
-      playerId: json['playerId'] as String,
-      participantId: json['participantId'] as String,
-      betType: BetType.fromString(json['betType'] as String),
-      amount: json['amount'] as int,
+      playerId: json['playerId'] as String? ?? '',
+      participantId: json['participantId'] as String? ?? '',
+      betType: BetType.fromString(json['betType'] as String? ?? 'WIN'),
+      amount: amount,
     );
   }
 

@@ -26,6 +26,24 @@ void main() async {
   runApp(DerbyDisorderApp(settingsProvider: settingsProvider));
 }
 
+/// Custom intent for directional navigation
+class DirectionalFocusIntent extends Intent {
+  const DirectionalFocusIntent(this.direction);
+  final TraversalDirection direction;
+}
+
+/// Action to handle directional focus
+class DirectionalFocusAction extends Action<DirectionalFocusIntent> {
+  @override
+  Object? invoke(DirectionalFocusIntent intent) {
+    final primaryFocus = FocusManager.instance.primaryFocus;
+    if (primaryFocus != null) {
+      primaryFocus.focusInDirection(intent.direction);
+    }
+    return null;
+  }
+}
+
 class DerbyDisorderApp extends StatelessWidget {
   final SettingsProvider settingsProvider;
 
@@ -76,13 +94,61 @@ class DerbyDisorderApp extends StatelessWidget {
         title: 'Derby Disorder: The Chaos Cup',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        home: const HomeScreen(),
-        // Shortcuts for TV remote and keyboard
+        home: const TVNavigationWrapper(child: HomeScreen()),
+        // Comprehensive shortcuts for TV remote, keyboard, and gamepad
         shortcuts: <ShortcutActivator, Intent>{
           ...WidgetsApp.defaultShortcuts,
+          // Select/Enter/OK button
           const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
           const SingleActivator(LogicalKeyboardKey.enter): const ActivateIntent(),
+          const SingleActivator(LogicalKeyboardKey.space): const ActivateIntent(),
+          // Gamepad A button
+          const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
+          const SingleActivator(LogicalKeyboardKey.gameButtonStart): const ActivateIntent(),
+          // D-pad navigation
+          const SingleActivator(LogicalKeyboardKey.arrowUp): DirectionalFocusIntent(TraversalDirection.up),
+          const SingleActivator(LogicalKeyboardKey.arrowDown): DirectionalFocusIntent(TraversalDirection.down),
+          const SingleActivator(LogicalKeyboardKey.arrowLeft): DirectionalFocusIntent(TraversalDirection.left),
+          const SingleActivator(LogicalKeyboardKey.arrowRight): DirectionalFocusIntent(TraversalDirection.right),
+          // WASD navigation
+          const SingleActivator(LogicalKeyboardKey.keyW): DirectionalFocusIntent(TraversalDirection.up),
+          const SingleActivator(LogicalKeyboardKey.keyS): DirectionalFocusIntent(TraversalDirection.down),
+          const SingleActivator(LogicalKeyboardKey.keyA): DirectionalFocusIntent(TraversalDirection.left),
+          const SingleActivator(LogicalKeyboardKey.keyD): DirectionalFocusIntent(TraversalDirection.right),
         },
+        actions: <Type, Action<Intent>>{
+          ...WidgetsApp.defaultActions,
+          DirectionalFocusIntent: DirectionalFocusAction(),
+        },
+      ),
+    );
+  }
+}
+
+/// Wrapper widget to handle TV navigation and focus
+class TVNavigationWrapper extends StatelessWidget {
+  final Widget child;
+
+  const TVNavigationWrapper({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return FocusTraversalGroup(
+      policy: WidgetOrderTraversalPolicy(),
+      child: Shortcuts(
+        shortcuts: <ShortcutActivator, Intent>{
+          // Additional media remote buttons
+          const SingleActivator(LogicalKeyboardKey.mediaPlayPause): const ActivateIntent(),
+          const SingleActivator(LogicalKeyboardKey.mediaPlay): const ActivateIntent(),
+          // Numpad enter
+          const SingleActivator(LogicalKeyboardKey.numpadEnter): const ActivateIntent(),
+        },
+        child: Actions(
+          actions: <Type, Action<Intent>>{
+            DirectionalFocusIntent: DirectionalFocusAction(),
+          },
+          child: child,
+        ),
       ),
     );
   }

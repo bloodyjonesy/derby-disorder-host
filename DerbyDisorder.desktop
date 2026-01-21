@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Derby Disorder
+Comment=Derby Disorder: The Chaos Cup Host
+Exec=/home/kylejw/derby-disorder-host/run-derby-disorder.sh
+Icon=/home/kylejw/derby-disorder-host/assets/icon.png
+Terminal=false
+Type=Application
+Categories=Game;

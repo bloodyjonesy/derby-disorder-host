@@ -75,20 +75,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      body: Focus(
-        autofocus: true,
-        onKeyEvent: (node, event) {
-          // Handle global key events for TV navigation
-          if (event is KeyDownEvent) {
-            if (event.logicalKey == LogicalKeyboardKey.escape ||
-                event.logicalKey == LogicalKeyboardKey.goBack) {
-              // Handle back navigation if needed
-              return KeyEventResult.handled;
-            }
-          }
-          return KeyEventResult.ignored;
-        },
-        child: Stack(
+      body: FocusTraversalGroup(
+        policy: WidgetOrderTraversalPolicy(),
+        child: Shortcuts(
+          shortcuts: <ShortcutActivator, Intent>{
+            const SingleActivator(LogicalKeyboardKey.escape): const DismissIntent(),
+            const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
+          },
+          child: Stack(
           children: [
             // Background
             Container(
@@ -137,6 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (roomProvider.tournamentChampionId != null && roomProvider.tournament != null)
               _buildChampionCelebration(roomProvider),
           ],
+        ),
         ),
       ),
     );
