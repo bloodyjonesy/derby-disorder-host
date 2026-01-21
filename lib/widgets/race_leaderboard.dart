@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../utils/theme.dart';
+import '../utils/responsive.dart';
 
 /// Displays live race standings
 /// Fully reactive design that adapts to any screen size
@@ -20,6 +21,9 @@ class RaceLeaderboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get global scale factor for screen size
+    final globalScale = Responsive.scale(context);
+    
     // Sort participants: finished by finish order, others by position
     final sortedParticipants = [...participants];
     sortedParticipants.sort((a, b) {
@@ -42,12 +46,13 @@ class RaceLeaderboard extends StatelessWidget {
         final availableWidth = constraints.maxWidth;
         final availableHeight = constraints.maxHeight;
         
-        // Determine compact mode based on available space
-        final isCompact = availableWidth < 280 || availableHeight < 500;
-        final isVeryCompact = availableWidth < 200;
+        // Determine compact mode based on available space AND global scale
+        final isCompact = availableWidth < 280 * globalScale || availableHeight < 500 * globalScale;
+        final isVeryCompact = availableWidth < 200 * globalScale;
         
-        // Scale factor based on available width
-        final scaleFactor = (availableWidth / 250).clamp(0.7, 1.2);
+        // Scale factor based on available width AND global scale
+        final localScale = (availableWidth / (250 * globalScale)).clamp(0.7, 1.2);
+        final scaleFactor = localScale * globalScale;
         final fontSize = (isCompact ? 11.0 : 14.0) * scaleFactor;
         final headerFontSize = (isCompact ? 12.0 : 16.0) * scaleFactor;
         final iconSize = (isCompact ? 14.0 : 20.0) * scaleFactor;

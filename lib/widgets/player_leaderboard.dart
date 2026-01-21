@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../utils/theme.dart';
+import '../utils/responsive.dart';
 
 /// Displays the player leaderboard with balances and bets
 /// Fully reactive design that adapts to any screen size
@@ -35,6 +36,9 @@ class PlayerLeaderboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get global scale factor for screen size
+    final globalScale = Responsive.scale(context);
+    
     return LayoutBuilder(
       builder: (context, constraints) {
         // Reactive sizing based on available width
@@ -42,11 +46,12 @@ class PlayerLeaderboard extends StatelessWidget {
         final availableHeight = constraints.maxHeight;
         
         // Determine if we should use compact mode based on available space
-        final isCompact = availableWidth < 280 || availableHeight < 500;
-        final isVeryCompact = availableWidth < 200;
+        final isCompact = availableWidth < 280 * globalScale || availableHeight < 500 * globalScale;
+        final isVeryCompact = availableWidth < 200 * globalScale;
         
-        // Scale font sizes based on available width
-        final scaleFactor = (availableWidth / 250).clamp(0.7, 1.2);
+        // Scale font sizes based on available width AND global scale
+        final localScale = (availableWidth / (250 * globalScale)).clamp(0.7, 1.2);
+        final scaleFactor = localScale * globalScale;
         final fontSize = (isCompact ? 11.0 : 14.0) * scaleFactor;
         final headerFontSize = (isCompact ? 12.0 : 16.0) * scaleFactor;
         final iconSize = (isCompact ? 14.0 : 20.0) * scaleFactor;

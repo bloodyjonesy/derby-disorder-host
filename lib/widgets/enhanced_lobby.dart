@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../utils/theme.dart';
+import '../utils/responsive.dart';
 import 'neon_room_code.dart';
 import 'player_avatar_card.dart';
 import 'glassmorphic_panel.dart';
@@ -102,6 +103,8 @@ class _EnhancedLobbyState extends State<EnhancedLobby>
 
   @override
   Widget build(BuildContext context) {
+    final scale = Responsive.scale(context);
+    
     return FocusTraversalGroup(
       policy: WidgetOrderTraversalPolicy(),
       child: Stack(
@@ -112,13 +115,13 @@ class _EnhancedLobbyState extends State<EnhancedLobby>
           // Main content
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(24 * scale),
               child: Column(
                 children: [
                   // Title section
                   _buildTitle(),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: 24 * scale),
 
                   // Content
                   Expanded(
@@ -206,6 +209,8 @@ class _EnhancedLobbyState extends State<EnhancedLobby>
     return AnimatedBuilder(
       animation: _titleController,
       builder: (context, child) {
+        final scale = Responsive.scale(context);
+        
         final slideOffset = Tween<Offset>(
           begin: const Offset(0, -0.3),
           end: Offset.zero,
@@ -227,7 +232,7 @@ class _EnhancedLobbyState extends State<EnhancedLobby>
             opacity: opacity,
             child: Column(
               children: [
-                // Main title with neon glow
+                // Main title with neon glow - responsive size
                 ShaderMask(
                   shaderCallback: (bounds) => LinearGradient(
                     colors: [
@@ -241,22 +246,22 @@ class _EnhancedLobbyState extends State<EnhancedLobby>
                     'DERBY DISORDER',
                     style: AppTheme.neonText(
                       color: Colors.white,
-                      fontSize: 52,
+                      fontSize: 52 * scale,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8 * scale),
                 Text(
                   'THE CHAOS CUP',
                   style: AppTheme.neonText(
                     color: AppTheme.neonCyan,
-                    fontSize: 28,
+                    fontSize: 28 * scale,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: 16 * scale),
 
                 // Game mode indicator
                 if (widget.settings != null)
@@ -377,6 +382,8 @@ class _EnhancedLobbyState extends State<EnhancedLobby>
   }
 
   Widget _buildLobbyView() {
+    final scale = Responsive.scale(context);
+    
     return FadeTransition(
       opacity: CurvedAnimation(
         parent: _contentController,
@@ -384,14 +391,14 @@ class _EnhancedLobbyState extends State<EnhancedLobby>
       ),
       child: Column(
         children: [
-          // Room code display
+          // Room code display - responsive size
           NeonRoomCode(
             roomCode: widget.roomCode,
             showJoinUrl: true,
-            letterSize: 70,
+            letterSize: 70 * scale,
           ),
 
-          const SizedBox(height: 32),
+          SizedBox(height: 24 * scale),
 
           // Tournament standings (if active)
           if (isTournamentInProgress) ...[

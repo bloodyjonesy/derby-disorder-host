@@ -94,6 +94,15 @@ class DerbyDisorderApp extends StatelessWidget {
         title: 'Derby Disorder: The Chaos Cup',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
+        // Disable system text scaling to ensure consistent UI
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.noScaling,
+            ),
+            child: child!,
+          );
+        },
         home: const TVNavigationWrapper(child: HomeScreen()),
         // Comprehensive shortcuts for TV remote, keyboard, and gamepad
         shortcuts: <ShortcutActivator, Intent>{

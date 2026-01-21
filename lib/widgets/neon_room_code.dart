@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../utils/theme.dart';
+import '../utils/responsive.dart';
 
 /// A dramatically styled room code display with neon glow and animations
 class NeonRoomCode extends StatefulWidget {
@@ -64,6 +65,8 @@ class _NeonRoomCodeState extends State<NeonRoomCode> with TickerProviderStateMix
       return const SizedBox.shrink();
     }
 
+    final scale = Responsive.scale(context);
+
     return AnimatedBuilder(
       animation: Listenable.merge([_glowAnimation, _entryController]),
       builder: (context, child) {
@@ -86,7 +89,7 @@ class _NeonRoomCodeState extends State<NeonRoomCode> with TickerProviderStateMix
                     curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
                   )),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: EdgeInsets.symmetric(horizontal: 24 * scale, vertical: 12 * scale),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -94,7 +97,7 @@ class _NeonRoomCodeState extends State<NeonRoomCode> with TickerProviderStateMix
                           AppTheme.neonOrange.withOpacity(0.1),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(30 * scale),
                       border: Border.all(
                         color: AppTheme.neonYellow.withOpacity(0.5),
                         width: 2,
@@ -103,11 +106,11 @@ class _NeonRoomCodeState extends State<NeonRoomCode> with TickerProviderStateMix
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
+                        Text(
                           '📱',
-                          style: TextStyle(fontSize: 24),
+                          style: TextStyle(fontSize: 24 * scale),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12 * scale),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -115,7 +118,7 @@ class _NeonRoomCodeState extends State<NeonRoomCode> with TickerProviderStateMix
                               'JOIN AT',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.7),
-                                fontSize: 12,
+                                fontSize: 12 * scale,
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: 2,
                               ),
@@ -124,7 +127,7 @@ class _NeonRoomCodeState extends State<NeonRoomCode> with TickerProviderStateMix
                               'ddcc.pw',
                               style: AppTheme.neonText(
                                 color: AppTheme.neonYellow,
-                                fontSize: 28,
+                                fontSize: 28 * scale,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -136,7 +139,7 @@ class _NeonRoomCodeState extends State<NeonRoomCode> with TickerProviderStateMix
                 ),
               ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24 * scale),
 
             // Room code label
             FadeTransition(
@@ -148,14 +151,14 @@ class _NeonRoomCodeState extends State<NeonRoomCode> with TickerProviderStateMix
                 'ROOM CODE',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.6),
-                  fontSize: 14,
+                  fontSize: 14 * scale,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 4,
                 ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: 16 * scale),
 
             // Room code letters
             _buildRoomCodeLetters(),
