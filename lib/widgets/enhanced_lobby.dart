@@ -131,28 +131,6 @@ class _EnhancedLobbyState extends State<EnhancedLobby>
             ),
           ),
 
-          // Settings button
-          if (widget.onOpenSettings != null)
-            Positioned(
-              top: 16,
-              right: 16,
-              child: SafeArea(
-                child: TVFocusable(
-                  focusNode: _settingsFocusNode,
-                  focusColor: AppTheme.neonCyan,
-                  onSelect: widget.onOpenSettings,
-                  child: GlassmorphicPanel(
-                    padding: const EdgeInsets.all(12),
-                    borderRadius: 12,
-                    child: Icon(
-                      Icons.settings,
-                      color: AppTheme.neonCyan,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -450,6 +428,22 @@ class _EnhancedLobbyState extends State<EnhancedLobby>
                 large: true,
               ),
             ),
+
+          // Settings button - below start button
+          if (widget.onOpenSettings != null) ...[
+            const SizedBox(height: 16),
+            TVFocusable(
+              focusNode: _settingsFocusNode,
+              focusColor: AppTheme.neonCyan,
+              onSelect: widget.onOpenSettings,
+              child: _NeonButton(
+                label: 'SETTINGS',
+                icon: Icons.settings,
+                color: AppTheme.neonCyan,
+                onPressed: widget.onOpenSettings,
+              ),
+            ),
+          ],
         ],
       ),
     );
