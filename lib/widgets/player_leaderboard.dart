@@ -3,11 +3,13 @@ import '../models/models.dart';
 import '../utils/theme.dart';
 
 /// Displays the player leaderboard with balances and bets
+/// Responsive design that adapts to screen size
 class PlayerLeaderboard extends StatelessWidget {
   final List<Player> players;
   final Map<String, Bet> bets;
   final List<Participant> participants;
-  final bool expandToFill; // When true, expands to fill available height (for racing view)
+  final bool expandToFill;
+  final bool compact; // Use compact mode for racing view
 
   const PlayerLeaderboard({
     super.key,
@@ -15,6 +17,7 @@ class PlayerLeaderboard extends StatelessWidget {
     required this.bets,
     required this.participants,
     this.expandToFill = false,
+    this.compact = false,
   });
 
   String _getBetText(String playerId) {
@@ -26,23 +29,40 @@ class PlayerLeaderboard extends StatelessWidget {
       orElse: () => participants.first,
     );
     
+    // Compact version shows less text
+    if (compact) {
+      return '${participant.icon} \$${bet.amount}';
+    }
     return '\$${bet.amount} ${bet.betType.value.toLowerCase()} on ${participant.name}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Responsive width: 15% of screen width, min 180, max 280
+    final panelWidth = compact 
+        ? (screenWidth * 0.14).clamp(160.0, 240.0)
+        : (screenWidth * 0.18).clamp(200.0, 350.0);
+    
+    final fontSize = compact ? 11.0 : 14.0;
+    final headerFontSize = compact ? 12.0 : 16.0;
+    final iconSize = compact ? 14.0 : 20.0;
+    final padding = compact ? 6.0 : 12.0;
+    final tilePadding = compact ? 4.0 : 8.0;
+
     return Container(
-      width: 350,
+      width: panelWidth,
       decoration: AppTheme.neonBox(
         color: AppTheme.neonCyan,
-        borderRadius: 12,
+        borderRadius: compact ? 8 : 12,
       ),
       child: Column(
         mainAxisSize: expandToFill ? MainAxisSize.max : MainAxisSize.min,
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(padding),
             decoration: const BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: AppTheme.neonCyan, width: 1),
@@ -50,13 +70,13 @@ class PlayerLeaderboard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.people, color: AppTheme.neonCyan, size: 20),
-                const SizedBox(width: 8),
+                Icon(Icons.people, color: AppTheme.neonCyan, size: iconSize),
+                SizedBox(width: compact ? 4 : 8),
                 Text(
                   'PLAYERS',
                   style: AppTheme.neonText(
                     color: AppTheme.neonCyan,
-                    fontSize: 16,
+                    fontSize: headerFontSize,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -66,156 +86,147 @@ class PlayerLeaderboard extends StatelessWidget {
           // Player list
           if (players.isEmpty)
             expandToFill
-              ? const Expanded(
+              ? Expanded(
                   child: Center(
                     child: Text(
-                      'Waiting for players...',
-                      style: TextStyle(color: AppTheme.textSecondary),
+                      'Waiting...',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: fontSize,
+                      ),
                     ),
                   ),
                 )
-              : const Padding(
-                  padding: EdgeInsets.all(16),
+              : Padding(
+                  padding: EdgeInsets.all(padding),
                   child: Text(
                     'Waiting for players...',
-                    style: TextStyle(color: AppTheme.textSecondary),
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: fontSize,
+                    ),
                   ),
                 )
           else
             expandToFill
               ? Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: EdgeInsets.symmetric(vertical: tilePadding / 2),
                     itemCount: players.length,
-                    itemBuilder: (context, index) => _buildPlayerTile(index),
+                    itemBuilder: (context, index) => _buildPlayerTile(index, fontSize, tilePadding),
                   ),
                 )
               : ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: EdgeInsets.symmetric(vertical: tilePadding / 2),
                   itemCount: players.length,
-                  itemBuilder: (context, index) => _buildPlayerTile(index),
+                  itemBuilder: (context, index) => _buildPlayerTile(index, fontSize, tilePadding),
                 ),
         ],
       ),
     );
   }
 
-  Widget _buildPlayerTile(int index) {
+  Widget _buildPlayerTile(int index, double fontSize, double tilePadding) {
     final player = players[index];
     final betText = _getBetText(player.id);
 
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
+      margin: EdgeInsets.symmetric(
+        horizontal: tilePadding,
+        vertical: tilePadding / 2,
       ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
+      padding: EdgeInsets.symmetric(
+        horizontal: tilePadding * 1.5,
+        vertical: tilePadding,
       ),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(compact ? 4 : 8),
       ),
       child: Row(
         children: [
-          // Rank
-          Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppTheme.neonPink.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '#${index + 1}',
-              style: const TextStyle(
-                color: AppTheme.neonPink,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+          // Rank - smaller in compact mode
+          if (!compact)
+            Container(
+              width: 24,
+              height: 24,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppTheme.neonPink.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '#${index + 1}',
+                style: TextStyle(
+                  color: AppTheme.neonPink,
+                  fontWeight: FontWeight.bold,
+                  fontSize: fontSize - 2,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
+          if (!compact) const SizedBox(width: 8),
           // Name and bet
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
-                    Text(
-                      player.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        player.name,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: fontSize,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (player.isViewer)
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.neonPurple.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '👁 VIEWER',
-                          style: TextStyle(
-                            color: AppTheme.neonPurple,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          '👁',
+                          style: TextStyle(fontSize: fontSize),
                         ),
                       )
                     else if (player.isBroke)
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.neonRed.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'BROKE',
-                          style: TextStyle(
-                            color: AppTheme.neonRed,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          '💸',
+                          style: TextStyle(fontSize: fontSize),
                         ),
                       ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  betText,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 11,
+                if (!compact) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    betText,
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: fontSize - 2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                ],
               ],
             ),
           ),
           // Balance
           Text(
             '\$${player.balance}',
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.neonGreen,
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: fontSize,
             ),
           ),
         ],

@@ -859,27 +859,28 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return Stack(
       children: [
-        // Main racing content - reduced top padding since header is now compact
+        // Main racing content - compact layout for TV displays
         Padding(
-          padding: const EdgeInsets.only(top: 50, bottom: 16),
+          padding: const EdgeInsets.only(top: 40, bottom: 8, left: 8, right: 8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Left leaderboard - Players (full height)
+              // Left leaderboard - Players (compact for racing)
               Container(
-                margin: const EdgeInsets.only(left: 16, top: 16, bottom: 16),
+                margin: const EdgeInsets.only(top: 8, bottom: 8),
                 child: PlayerLeaderboard(
                   players: roomProvider.players,
                   bets: roomProvider.room?.bets ?? {},
                   participants: roomProvider.participants,
                   expandToFill: true,
+                  compact: true, // Use compact mode during racing
                 ),
               ),
 
-              // Center - Race track
+              // Center - Race track (takes most of the space)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: RaceView(
                     participants: roomProvider.participants,
                     positions: raceProvider.positions,
@@ -888,14 +889,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // Right leaderboard - Race standings (full height)
+              // Right leaderboard - Race standings (compact for racing)
               Container(
-                margin: const EdgeInsets.only(right: 16, top: 16, bottom: 16),
+                margin: const EdgeInsets.only(top: 8, bottom: 8),
                 child: RaceLeaderboard(
                   participants: roomProvider.participants,
                   positions: raceProvider.positions,
                   finishOrder: raceProvider.finishOrder,
                   expandToFill: true,
+                  compact: true, // Use compact mode during racing
                 ),
               ),
             ],

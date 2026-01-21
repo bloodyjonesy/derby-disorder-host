@@ -3,22 +3,39 @@ import '../models/models.dart';
 import '../utils/theme.dart';
 
 /// Displays live race standings
+/// Responsive design that adapts to screen size
 class RaceLeaderboard extends StatelessWidget {
   final List<Participant> participants;
   final Map<String, double> positions;
-  final List<String> finishOrder; // Order in which participants finished
-  final bool expandToFill; // When true, expands to fill available height
+  final List<String> finishOrder;
+  final bool expandToFill;
+  final bool compact; // Use compact mode for racing view
 
   const RaceLeaderboard({
     super.key,
     required this.participants,
     required this.positions,
     this.finishOrder = const [],
-    this.expandToFill = true, // Default to true since mainly used in racing view
+    this.expandToFill = true,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Responsive width: 15% of screen width, min 180, max 280
+    final panelWidth = compact 
+        ? (screenWidth * 0.14).clamp(160.0, 240.0)
+        : (screenWidth * 0.18).clamp(200.0, 350.0);
+    
+    final fontSize = compact ? 11.0 : 14.0;
+    final headerFontSize = compact ? 12.0 : 16.0;
+    final iconSize = compact ? 14.0 : 20.0;
+    final emojiSize = compact ? 16.0 : 20.0;
+    final padding = compact ? 6.0 : 12.0;
+    final tilePadding = compact ? 4.0 : 8.0;
+
     // Sort participants: finished participants by finish order, others by position
     final sortedParticipants = [...participants];
     sortedParticipants.sort((a, b) {
@@ -27,33 +44,26 @@ class RaceLeaderboard extends StatelessWidget {
       final aFinished = finishOrder.contains(a.id);
       final bFinished = finishOrder.contains(b.id);
       
-      // Both finished: sort by finish order (who crossed first is ranked higher)
       if (aFinished && bFinished) {
         return finishOrder.indexOf(a.id).compareTo(finishOrder.indexOf(b.id));
       }
-      
-      // Only A finished: A is ahead
       if (aFinished && !bFinished) return -1;
-      
-      // Only B finished: B is ahead
       if (!aFinished && bFinished) return 1;
-      
-      // Neither finished: sort by current position (descending)
       return posB.compareTo(posA);
     });
 
     return Container(
-      width: 350,
+      width: panelWidth,
       decoration: AppTheme.neonBox(
         color: AppTheme.neonYellow,
-        borderRadius: 12,
+        borderRadius: compact ? 8 : 12,
       ),
       child: Column(
         mainAxisSize: expandToFill ? MainAxisSize.max : MainAxisSize.min,
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(padding),
             decoration: const BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: AppTheme.neonYellow, width: 1),
@@ -61,14 +71,16 @@ class RaceLeaderboard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.leaderboard, color: AppTheme.neonYellow, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'LIVE STANDINGS',
-                  style: AppTheme.neonText(
-                    color: AppTheme.neonYellow,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                Icon(Icons.leaderboard, color: AppTheme.neonYellow, size: iconSize),
+                SizedBox(width: compact ? 4 : 8),
+                Expanded(
+                  child: Text(
+                    compact ? 'RACE' : 'STANDINGS',
+                    style: AppTheme.neonText(
+                      color: AppTheme.neonYellow,
+                      fontSize: headerFontSize,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -78,106 +90,110 @@ class RaceLeaderboard extends StatelessWidget {
           expandToFill
             ? Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: EdgeInsets.symmetric(vertical: tilePadding / 2),
                   itemCount: sortedParticipants.length,
-                  itemBuilder: (context, index) => _buildStandingTile(sortedParticipants[index], index),
+                  itemBuilder: (context, index) => 
+                    _buildStandingTile(sortedParticipants[index], index, fontSize, emojiSize, tilePadding),
                 ),
               )
             : ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: EdgeInsets.symmetric(vertical: tilePadding / 2),
                 itemCount: sortedParticipants.length,
-                itemBuilder: (context, index) => _buildStandingTile(sortedParticipants[index], index),
+                itemBuilder: (context, index) => 
+                  _buildStandingTile(sortedParticipants[index], index, fontSize, emojiSize, tilePadding),
               ),
         ],
       ),
     );
   }
 
-  Widget _buildStandingTile(Participant participant, int index) {
+  Widget _buildStandingTile(Participant participant, int index, double fontSize, double emojiSize, double tilePadding) {
     final position = positions[participant.id] ?? 0.0;
     final hasFinished = finishOrder.contains(participant.id);
 
+    // Medal for top 3
+    String rankDisplay;
+    if (index == 0) {
+      rankDisplay = '🥇';
+    } else if (index == 1) {
+      rankDisplay = '🥈';
+    } else if (index == 2) {
+      rankDisplay = '🥉';
+    } else {
+      rankDisplay = '#${index + 1}';
+    }
+
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
+      margin: EdgeInsets.symmetric(
+        horizontal: tilePadding,
+        vertical: tilePadding / 2,
       ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
+      padding: EdgeInsets.symmetric(
+        horizontal: tilePadding * 1.5,
+        vertical: tilePadding,
       ),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(compact ? 4 : 8),
         border: index == 0
             ? Border.all(color: AppTheme.neonYellow.withOpacity(0.5))
             : null,
       ),
       child: Row(
         children: [
-          // Rank
-          Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: _getRankColor(index).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(4),
-            ),
+          // Rank/Medal
+          SizedBox(
+            width: compact ? 20 : 28,
             child: Text(
-              '#${index + 1}',
+              rankDisplay,
               style: TextStyle(
+                fontSize: index < 3 ? emojiSize - 2 : fontSize - 2,
                 color: _getRankColor(index),
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: compact ? 4 : 8),
           // Emoji
           Text(
             participant.icon,
-            style: const TextStyle(fontSize: 20),
+            style: TextStyle(fontSize: emojiSize),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: compact ? 4 : 8),
           // Name
           Expanded(
             child: Text(
               participant.name,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
+                fontSize: fontSize,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           // Position / Finished indicator
-          hasFinished
-              ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppTheme.neonGreen.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    '✓ FINISHED',
-                    style: TextStyle(
-                      color: AppTheme.neonGreen,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                )
-              : Text(
-                  '${position.toStringAsFixed(1)}m',
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
+          if (hasFinished)
+            Text(
+              '✓',
+              style: TextStyle(
+                color: AppTheme.neonGreen,
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          else
+            Text(
+              '${position.toStringAsFixed(0)}%',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: fontSize - 2,
+              ),
+            ),
         ],
       ),
     );
