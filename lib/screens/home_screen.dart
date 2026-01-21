@@ -102,8 +102,13 @@ class _HomeScreenState extends State<HomeScreen> {
             // Main content based on game state
             _buildContent(roomProvider, raceProvider, settingsProvider, partyProvider),
 
-            // Top bar with room code and phase
-            if (roomProvider.hasRoom) _buildTopBar(roomProvider, settingsProvider, partyProvider),
+            // Top bar with room code and phase - hide during racing to avoid overlap
+            if (roomProvider.hasRoom && roomProvider.gameState != GameState.racing) 
+              _buildTopBar(roomProvider, settingsProvider, partyProvider),
+            
+            // Compact racing header - minimal overlay during race
+            if (roomProvider.hasRoom && roomProvider.gameState == GameState.racing)
+              _buildRacingHeader(roomProvider),
 
             // Skip phase button (not during racing or lobby)
             if (roomProvider.hasRoom &&
@@ -488,6 +493,58 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Compact racing header - shows just room code and race number without overlapping leaderboards
+  Widget _buildRacingHeader(RoomProvider roomProvider) {
+    return Positioned(
+      top: 8,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.neonCyan.withOpacity(0.5)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '🏁 ${roomProvider.roomCode ?? ""}',
+                  style: const TextStyle(
+                    color: AppTheme.neonCyan,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                if (roomProvider.isTournamentActive && roomProvider.tournament != null) ...[
+                  const SizedBox(width: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.neonPurple.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '🏆 ${roomProvider.raceNumber}/${roomProvider.tournament!.totalRaces}',
+                      style: const TextStyle(
+                        color: AppTheme.neonPurple,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPaddockView(RoomProvider roomProvider, SettingsProvider settingsProvider, PartyProvider partyProvider) {
     final isSabotage = roomProvider.gameState == GameState.sabotage;
     final isPaddock = roomProvider.gameState == GameState.paddock;
@@ -802,9 +859,9 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return Stack(
       children: [
-        // Main racing content
+        // Main racing content - reduced top padding since header is now compact
         Padding(
-          padding: const EdgeInsets.only(top: 100, bottom: 16),
+          padding: const EdgeInsets.only(top: 50, bottom: 16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
