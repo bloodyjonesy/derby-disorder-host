@@ -859,28 +859,31 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return Stack(
       children: [
-        // Main racing content - compact layout for TV displays
+        // Main racing content - fully reactive flex-based layout
         Padding(
           padding: const EdgeInsets.only(top: 40, bottom: 8, left: 8, right: 8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Left leaderboard - Players (compact for racing)
-              Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 8),
-                child: PlayerLeaderboard(
-                  players: roomProvider.players,
-                  bets: roomProvider.room?.bets ?? {},
-                  participants: roomProvider.participants,
-                  expandToFill: true,
-                  compact: true, // Use compact mode during racing
+              // Left leaderboard - Players (flex: 1)
+              Flexible(
+                flex: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: PlayerLeaderboard(
+                    players: roomProvider.players,
+                    bets: roomProvider.room?.bets ?? {},
+                    participants: roomProvider.participants,
+                    expandToFill: true,
+                  ),
                 ),
               ),
 
-              // Center - Race track (takes most of the space)
-              Expanded(
+              // Center - Race track (flex: 5 - takes majority of space)
+              Flexible(
+                flex: 5,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: RaceView(
                     participants: roomProvider.participants,
                     positions: raceProvider.positions,
@@ -889,15 +892,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              // Right leaderboard - Race standings (compact for racing)
-              Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 8),
-                child: RaceLeaderboard(
-                  participants: roomProvider.participants,
-                  positions: raceProvider.positions,
-                  finishOrder: raceProvider.finishOrder,
-                  expandToFill: true,
-                  compact: true, // Use compact mode during racing
+              // Right leaderboard - Race standings (flex: 1)
+              Flexible(
+                flex: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: RaceLeaderboard(
+                    participants: roomProvider.participants,
+                    positions: raceProvider.positions,
+                    finishOrder: raceProvider.finishOrder,
+                    expandToFill: true,
+                  ),
                 ),
               ),
             ],
@@ -912,9 +917,9 @@ class _HomeScreenState extends State<HomeScreen> {
           isRacing: roomProvider.gameState == GameState.racing,
         ),
 
-        // Player reactions at bottom center
+        // Player reactions at bottom center - responsive positioning
         Positioned(
-          bottom: 80,
+          bottom: MediaQuery.of(context).size.height * 0.08,
           left: 0,
           right: 0,
           child: Center(
@@ -934,11 +939,12 @@ class _HomeScreenState extends State<HomeScreen> {
           playerIds: roomProvider.players.map((p) => p.id).toList(),
         ),
 
-        // Side bets display (if party mode)
+        // Side bets display (if party mode) - positioned reactively
         if (settingsProvider.sideBetsEnabled && partyProvider.getCurrentRaceSideBets().isNotEmpty)
           Positioned(
-            top: 120,
-            right: 380,
+            top: 100,
+            // Position at ~20% from right edge (after the right leaderboard)
+            right: MediaQuery.of(context).size.width * 0.18,
             child: SideBetsDisplay(
               sideBets: partyProvider.getCurrentRaceSideBets(),
               players: roomProvider.players,
